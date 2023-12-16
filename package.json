@@ -33,8 +33,7 @@
     "openai": "^4.20.1",
     "pg": "^8.11.3",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1",
-    "url-parse": "^1.5.10"
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

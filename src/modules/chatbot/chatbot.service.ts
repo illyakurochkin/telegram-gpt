@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Telegraf, Context } from 'telegraf';
 import { Message } from '@telegraf/types/message';
-import { Url } from 'url';
+import { URL } from 'url';
 import { OpenAIService } from '../openai/openai.service';
 import { UserService } from '../user/user.service';
 import { User } from '../user/user.entity';
