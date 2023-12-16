@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Telegraf, Context } from 'telegraf';
 import { Message } from '@telegraf/types/message';
-import url from 'url-parse';
+import { URL } from 'url';
 import { OpenAIService } from '../openai/openai.service';
 import { UserService } from '../user/user.service';
 import { User } from '../user/user.entity';
@@ -179,7 +179,7 @@ export class ChatBotService {
    * @private
    */
   private async launchWebhook(webhookUrl: string) {
-    const { hostname, port, pathname } = url(webhookUrl);
+    const { hostname, port, pathname } = new URL(webhookUrl);
 
     return this.telegraf.launch({
       webhook: {
