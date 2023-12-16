@@ -6,6 +6,7 @@ import { UserModule } from './modules/user/user.module';
 import { databaseConfig } from './config/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ChatBotController } from './modules/chatbot/chatbot.controller';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { AppService } from './app.service';
     UserModule,
     TypeOrmModule.forRoot(databaseConfig),
   ],
-  controllers: [AppController],
+  controllers: [AppController, ChatBotController],
   providers: [AppService],
 })
 export class AppModule {}

@@ -1,4 +1,4 @@
-import { Controller, Post, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Req, Res } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 
 @Controller('/webhook')
@@ -16,5 +16,10 @@ export class ChatBotController {
     }
 
     res.sendStatus(200); // Respond to the request to acknowledge receipt
+  }
+
+  @Get()
+  async test() {
+    return 'hello';
   }
 }
