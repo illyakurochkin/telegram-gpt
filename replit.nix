@@ -1,5 +1,6 @@
 { pkgs }: {
     deps = [
+      pkgs.postgresql
         pkgs.yarn
         pkgs.esbuild
         pkgs.nodejs-18_x
