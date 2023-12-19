@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OpenAIClient } from './openai-client';
-import { rootLogger } from 'ts-jest';
 
 @Injectable()
 export class OpenAIService {
+  private readonly logger = new Logger(OpenAIService.name);
   private readonly openAIClient: OpenAIClient = new OpenAIClient();
 
   async createThread({ token }: { token: string }): Promise<string> {

@@ -1,46 +1,51 @@
-import { Injectable } from '@nestjs/common';
-import { Telegraf, Context } from 'telegraf';
+import { Injectable, Logger } from '@nestjs/common';
+import { Context, Scenes } from 'telegraf';
 import { Message } from '@telegraf/types/message';
-import { URL } from 'url';
-import { OpenAIService } from '../openai/openai.service';
-import { UserService } from '../user/user.service';
-import { User } from '../user/user.entity';
+import { OpenAIService } from '../openai';
+import { UserService, User } from '../user';
+import { messages } from '../../resources/messages';
+import { TelegramService } from '../telegram';
+import { FAILED_RUN_STATUSES, SUCCESSFUL_RUN_STATUSES } from "../openai/openai.constant";
 
 @Injectable()
 export class ChatBotService {
+  private readonly logger = new Logger(ChatBotService.name);
+
   constructor(
-    private readonly telegraf: Telegraf,
+    private readonly telegramService: TelegramService,
     private readonly openAIService: OpenAIService,
     private readonly userService: UserService,
   ) {
-    telegraf.command('start', this.handleStart.bind(this));
-    telegraf.command('token', this.handleToken.bind(this));
-    telegraf.command('reset', this.handleReset.bind(this));
-    telegraf.on('message', this.handleMessage.bind(this));
+    const stage = new Scenes.Stage([
+
+    ])
+
+    const scene = new Scenes.
+
+    telegramService.registerCommand('start', this.handleStart.bind(this));
+    telegramService.registerCommand('token', this.handleToken.bind(this));
+    telegramService.registerCommand('reset', this.handleReset.bind(this));
+    telegramService.registerMessageHandler(this.handleMessage.bind(this));
   }
 
   public async handleStart(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
-
-    console.log('user', user);
-    return ctx.reply(
-      'Welcome to the Crypto Bot! Type /token to get your API token.',
-    );
+    this.logger.log(`user ${user.id} started the bot`);
+    return ctx.replyWithHTML(messages.greeting);
   }
 
   public async handleToken(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
 
     // token is the second argument
-    const token = (ctx.message as any).text.split(' ')[1];
+    const token = (ctx.message as Message.TextMessage).text?.split(' ')[1];
 
     const isValid = await this.openAIService.validateToken(token);
-    if (!isValid) return ctx.reply('Invalid token.');
+    if (!isValid) return ctx.reply(messages.tokenRejected);
 
-    user.token = token;
-    await this.userService.updateUser(user);
+    await this.userService.setUserToken(user, token);
 
-    return ctx.reply(`Your API token is saved.`);
+    return ctx.reply(messages.tokenAccepted);
   }
 
   private async handleReset(ctx: Context) {
@@ -86,62 +91,57 @@ export class ChatBotService {
     }
   }
 
-  private waitForResponse({
+  private async waitForResponse({
+    chatId,
     user,
     runId,
-    processingMessage,
-    ctx,
   }: {
+    chatId: number;
     user: User;
     runId: string;
-    processingMessage: Message.TextMessage;
-    ctx: Context;
   }) {
-    const intervalId = setInterval(async () => {
-      const run = await this.openAIService.getRun({
-        runId,
-        threadId: user.threadId,
-        token: user.token,
-      });
-
-      if (run.status === 'failed') {
-        clearInterval(intervalId);
-        await this.telegraf.telegram.deleteMessage(
-          processingMessage.chat.id,
-          processingMessage.message_id,
-        );
-        await ctx.reply('something went wrong.');
-      }
-
-      if (run.status === 'completed') {
-        clearInterval(intervalId);
-
-        const messages = await this.openAIService.getMessages({
+    const promise = new Promise<string>((resolve) => {
+      const intervalId = setInterval(async () => {
+        const run = await this.openAIService.getRun({
+          runId,
           threadId: user.threadId,
           token: user.token,
         });
 
-        await this.telegraf.telegram.deleteMessage(
-          processingMessage.chat.id,
-          processingMessage.message_id,
-        );
-
-        const response = messages[0]?.content?.[0]?.text?.value;
-        if (response?.length) {
-          await ctx.reply(response);
-        } else {
-          await ctx.reply('something went wrong.');
+        if (FAILED_RUN_STATUSES.includes(run.status)) {
+          clearInterval(intervalId);
+          resolve('something went wrong.');
         }
 
-        user.runId = null;
-        await this.userService.updateUser(user);
-      }
-    }, 1000);
+        if (SUCCESSFUL_RUN_STATUSES.includes(run.status)) {
+          clearInterval(intervalId);
+
+          const messages = await this.openAIService.getMessages({
+            threadId: user.threadId,
+            token: user.token,
+          });
+
+          const response = messages[0]?.content?.[0]?.text?.value;
+          if (response?.length) {
+            resolve(response);
+          } else {
+            resolve('something went wrong.');
+          }
+
+          user.runId = null;
+          await this.userService.updateUser(user);
+        }
+      }, 1000);
+    });
+
+    await this.telegramService.sendAsyncMessage(
+      chatId,
+      'processing...',
+      promise,
+    );
   }
 
   private async processMessage(user: User, ctx: Context) {
-    const processingMessage = await ctx.reply('processing...');
-
     const runId = await this.openAIService.sendMessage({
       threadId: user.threadId,
       assistantId: user.assistantId,
@@ -149,11 +149,10 @@ export class ChatBotService {
       token: user.token,
     });
 
-    this.waitForResponse({
+    await this.waitForResponse({
+      chatId: ctx.chat.id,
       user,
       runId,
-      processingMessage,
-      ctx,
     });
   }
 
@@ -165,51 +164,12 @@ export class ChatBotService {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
 
     if (!user.token) {
-      return ctx.reply(
+      return ctx.replyWithMarkdownV2(
         'Please set your API token first by typing "/token <YOUR_OPENAI_TOKEN>"',
       );
     }
 
     await this.initializeAssistantAndThread(user, ctx);
     await this.processMessage(user, ctx);
-  }
-
-  /**
-   * This method sets the webhook for the telegram bot
-   * @private
-   */
-  private async launchWebhook(webhookUrl: string) {
-    const { hostname, port, pathname } = new URL(webhookUrl);
-
-    return this.telegraf.launch({
-      webhook: {
-        domain: hostname,
-        port: Number(port),
-        hookPath: pathname,
-      },
-    });
-  }
-
-  /**
-   * This method starts the polling for the telegram bot
-   * @private
-   */
-  private async launchPolling() {
-    return this.telegraf.launch();
-  }
-
-  /**
-   * This method launches the bot based on the configuration
-   * If the TELEGRAM_WEBHOOK_URL is set, it will launch the bot using the webhook
-   * Otherwise, it will launch the bot using polling
-   */
-  public async launch() {
-    const webhookUrl = process.env.TELEGRAM_WEBHOOK_URL;
-
-    if (webhookUrl) {
-      return this.launchWebhook(webhookUrl);
-    } else {
-      return this.launchPolling();
-    }
   }
 }

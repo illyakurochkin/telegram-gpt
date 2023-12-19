@@ -1,18 +1,31 @@
 import { NestFactory } from '@nestjs/core';
+import { Logger } from '@nestjs/common';
+import { TelegramService } from './modules/telegram';
 import { AppModule } from './app.module';
-import { ChatBotService } from './modules/chatbot/chatbot.service';
 import 'dotenv/config';
 
 async function bootstrap() {
+  // Create the NestJS application
   const app = await NestFactory.create(AppModule);
 
-  const chatBotService = app.get(ChatBotService);
+  // Get services from the app container
+  const chatBotService = app.get(TelegramService);
+  const logger = app.get(Logger);
 
+  // Extract environment variables
+  const webhookUrl = process.env.TELEGRAM_WEBHOOK_URL;
   const port = process.env.PORT || 3000;
-  await app.listen(port);
-  await chatBotService.launch();
 
-  console.log(`listening on port ${port}`);
+  if (webhookUrl) {
+    // Start the bot in webhook mode
+    await app.listen(port);
+    await chatBotService.launchWebhook(webhookUrl);
+    logger.log(`Webhook bot started, listening on port ${port}`, 'Bootstrap');
+  } else {
+    // Start the bot in polling mode
+    logger.log('Long polling bot started', 'Bootstrap');
+    await chatBotService.launchPolling();
+  }
 }
 
 bootstrap();

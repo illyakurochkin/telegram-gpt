@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { User } from './user.entity';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(private readonly entityManager: EntityManager) {}
 
   public async findOrCreateUser(userId: number) {
@@ -17,6 +19,11 @@ export class UserService {
     user.threadId = null;
     user.runId = null;
 
+    await this.entityManager.save(user);
+  }
+
+  public async setUserToken(user: User, token: string) {
+    user.token = token;
     await this.entityManager.save(user);
   }
 

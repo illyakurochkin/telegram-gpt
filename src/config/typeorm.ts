@@ -5,5 +5,5 @@ export const databaseConfig: TypeOrmModuleOptions = {
   url: process.env.DATABASE_URL,
   ssl: false,
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  synchronize: true,
+  synchronize: process.env.NODE_ENV !== 'production',
 };
