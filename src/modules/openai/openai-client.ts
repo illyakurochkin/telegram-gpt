@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { RunStatus } from './openai.types';
 
 export class OpenAIClient {
   private readonly client: AxiosInstance;
@@ -120,17 +121,7 @@ export class OpenAIClient {
     threadId: string;
     runId: string;
     token: string;
-  }): Promise<{
-    status:
-      | 'queued'
-      | 'in_progress'
-      | 'requires_action'
-      | 'cancelling'
-      | 'cancelled'
-      | 'failed'
-      | 'completed'
-      | 'expired';
-  }> {
+  }): Promise<{ status: RunStatus }> {
     try {
       const response = await this.client.get(
         `/threads/${threadId}/runs/${runId}`,
