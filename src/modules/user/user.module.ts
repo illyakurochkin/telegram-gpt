@@ -5,5 +5,6 @@ import { EntityManager } from 'typeorm';
 @Module({
   imports: [EntityManager],
   providers: [UserService],
+  exports: [UserService],
 })
 export class UserModule {}

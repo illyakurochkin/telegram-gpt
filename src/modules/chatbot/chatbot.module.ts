@@ -1,19 +1,12 @@
-import { Module } from '@nestjs/common';
-import { Telegraf } from 'telegraf';
+import { Logger, Module } from '@nestjs/common';
+import { OpenAIModule } from '../openai';
+import { UserModule } from '../user';
+import { TelegramModule } from '../telegram';
 import { ChatBotService } from './chatbot.service';
-import { OpenAIModule } from '../openai/openai.module';
-import { UserService } from '../user/user.service';
 
 @Module({
-  imports: [OpenAIModule],
-  providers: [
-    ChatBotService,
-    {
-      provide: Telegraf,
-      useFactory: () => new Telegraf(process.env.TELEGRAM_BOT_TOKEN),
-    },
-    UserService,
-  ],
-  exports: [ChatBotService, Telegraf],
+  imports: [OpenAIModule, UserModule, TelegramModule],
+  providers: [ChatBotService, Logger],
+  exports: [ChatBotService],
 })
 export class ChatBotModule {}
