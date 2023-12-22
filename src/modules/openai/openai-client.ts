@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { RunStatus } from './openai.types';
+import { ASSISTANT_INSTRUCTIONS } from './openai.constant';
 
 export class OpenAIClient {
   private readonly client: AxiosInstance;
@@ -37,17 +38,12 @@ export class OpenAIClient {
     content: string;
     token: string;
   }): Promise<string> {
-    try {
-      const message = await this.client.post(
-        `/threads/${threadId}/messages`,
-        { content, role: 'user' },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      return message.data.id;
-    } catch (e) {
-      console.log('e', e.response);
-      throw e;
-    }
+    const message = await this.client.post(
+      `/threads/${threadId}/messages`,
+      { content, role: 'user' },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return message.data.id;
   }
 
   async deleteThread({
@@ -63,21 +59,15 @@ export class OpenAIClient {
   }
 
   async createAssistant({ token }: { token: string }): Promise<string> {
-    try {
-      const assistant = await this.client.post(
-        '/assistants',
-        {
-          model: 'gpt-3.5-turbo',
-          instructions:
-            'you are a clown. you always respond with a massive amount of emojis, memes and jokes',
-        },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      return assistant.data.id;
-    } catch (e) {
-      console.log('e', e);
-      return '';
-    }
+    const assistant = await this.client.post(
+      '/assistants',
+      {
+        model: 'gpt-3.5-turbo',
+        instructions: ASSISTANT_INSTRUCTIONS,
+      },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return assistant.data.id;
   }
 
   async deleteAssistant({
@@ -101,16 +91,12 @@ export class OpenAIClient {
     threadId: string;
     token: string;
   }): Promise<string> {
-    try {
-      const run = await this.client.post(
-        `/threads/${threadId}/runs`,
-        { assistant_id: assistantId },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      return run.data.id;
-    } catch (e) {
-      console.log('e', e.response);
-    }
+    const run = await this.client.post(
+      `/threads/${threadId}/runs`,
+      { assistant_id: assistantId },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return run.data.id;
   }
 
   async getRun({
@@ -153,8 +139,7 @@ export class OpenAIClient {
       } catch {
         return false;
       }
-    } catch (e) {
-      console.log('e', e);
+    } catch {
       return false;
     }
   }

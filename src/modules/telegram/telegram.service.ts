@@ -1,12 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Context, Telegraf } from 'telegraf';
 import { URL } from 'url';
+import { toMarkdown } from '../../utils/markdown';
 
 @Injectable()
 export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
 
-  constructor(private readonly telegraf: Telegraf) {}
+  constructor(private readonly telegraf: Telegraf<Context>) {}
 
   /**
    * This method registers a command handler
@@ -45,13 +46,26 @@ export class TelegramService {
     );
 
     const text = await promise;
+    const parsed = toMarkdown(text);
 
-    await this.telegraf.telegram.editMessageText(
-      chatId,
-      loadingMessage.message_id,
-      undefined,
-      text,
-    );
+    try {
+      await this.telegraf.telegram.editMessageText(
+        chatId,
+        loadingMessage.message_id,
+        undefined,
+        parsed,
+        {
+          parse_mode: 'MarkdownV2',
+        },
+      );
+    } catch {
+      await this.telegraf.telegram.editMessageText(
+        chatId,
+        loadingMessage.message_id,
+        undefined,
+        text,
+      );
+    }
   }
 
   /**

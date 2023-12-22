@@ -1,11 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Context, Scenes } from 'telegraf';
-import { Message } from '@telegraf/types/message';
+import { Context } from 'telegraf';
+import { Message } from '@telegraf/types';
 import { OpenAIService } from '../openai';
 import { UserService, User } from '../user';
 import { messages } from '../../resources/messages';
 import { TelegramService } from '../telegram';
-import { FAILED_RUN_STATUSES, SUCCESSFUL_RUN_STATUSES } from "../openai/openai.constant";
+import {
+  FAILED_RUN_STATUSES,
+  SUCCESSFUL_RUN_STATUSES,
+} from '../openai/openai.constant';
 
 @Injectable()
 export class ChatBotService {
@@ -16,41 +19,46 @@ export class ChatBotService {
     private readonly openAIService: OpenAIService,
     private readonly userService: UserService,
   ) {
-    const stage = new Scenes.Stage([
-
-    ])
-
-    const scene = new Scenes.
-
     telegramService.registerCommand('start', this.handleStart.bind(this));
     telegramService.registerCommand('token', this.handleToken.bind(this));
     telegramService.registerCommand('reset', this.handleReset.bind(this));
+
     telegramService.registerMessageHandler(this.handleMessage.bind(this));
   }
 
+  /**
+   * Handle /start command
+   * @param ctx
+   */
   public async handleStart(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
     this.logger.log(`user ${user.id} started the bot`);
     return ctx.replyWithHTML(messages.greeting);
   }
 
+  /**
+   * Handle /token command
+   * @param ctx
+   */
   public async handleToken(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
 
     // token is the second argument
     const token = (ctx.message as Message.TextMessage).text?.split(' ')[1];
+    if (!token) return ctx.replyWithHTML(messages.tokenRequired);
 
     const isValid = await this.openAIService.validateToken(token);
-    if (!isValid) return ctx.reply(messages.tokenRejected);
+    if (!isValid) return ctx.replyWithHTML(messages.tokenRejected);
 
     await this.userService.setUserToken(user, token);
-
-    return ctx.reply(messages.tokenAccepted);
+    return ctx.replyWithHTML(messages.tokenAccepted);
   }
 
-  private async handleReset(ctx: Context) {
-    await ctx.reply('Resetting...');
-
+  /**
+   * Handle /reset command
+   * @param ctx
+   */
+  public async handleReset(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
 
     if (user.threadId) {
@@ -63,32 +71,25 @@ export class ChatBotService {
     // TODO: stop run
 
     await this.userService.resetUser(user);
-
-    return ctx.reply('Reset complete.');
+    return ctx.replyWithHTML(messages.userReset);
   }
 
-  private async initializeAssistantAndThread(user: User, ctx: Context) {
-    if (!user.assistantId || !user.threadId) {
-      if (!user.assistantId) {
-        await ctx.reply('Creating assistant...');
-        user.assistantId = await this.openAIService.createAssistant({
-          token: user.token,
-        });
-        await ctx.reply('Assistant created.');
-      }
+  private async initializeAssistantAndThread(user: User) {
+    if (user.assistantId && user.threadId) return;
 
-      if (!user.threadId) {
-        await ctx.reply('Creating thread...');
-        user.threadId = await this.openAIService.createThread({
-          token: user.token,
-        });
-        await ctx.reply('Thread created.');
-      }
-
-      await ctx.reply('Saving user...');
-      await this.userService.updateUser(user);
-      await ctx.reply('User saved.');
+    if (!user.assistantId) {
+      user.assistantId = await this.openAIService.createAssistant({
+        token: user.token,
+      });
     }
+
+    if (!user.threadId) {
+      user.threadId = await this.openAIService.createThread({
+        token: user.token,
+      });
+    }
+
+    await this.userService.updateUser(user);
   }
 
   private async waitForResponse({
@@ -110,7 +111,7 @@ export class ChatBotService {
 
         if (FAILED_RUN_STATUSES.includes(run.status)) {
           clearInterval(intervalId);
-          resolve('something went wrong.');
+          resolve(messages.somethingWentWrong);
         }
 
         if (SUCCESSFUL_RUN_STATUSES.includes(run.status)) {
@@ -122,11 +123,7 @@ export class ChatBotService {
           });
 
           const response = messages[0]?.content?.[0]?.text?.value;
-          if (response?.length) {
-            resolve(response);
-          } else {
-            resolve('something went wrong.');
-          }
+          resolve(response || messages.somethingWentWrong);
 
           user.runId = null;
           await this.userService.updateUser(user);
@@ -136,7 +133,7 @@ export class ChatBotService {
 
     await this.telegramService.sendAsyncMessage(
       chatId,
-      'processing...',
+      messages.processing,
       promise,
     );
   }
@@ -145,7 +142,7 @@ export class ChatBotService {
     const runId = await this.openAIService.sendMessage({
       threadId: user.threadId,
       assistantId: user.assistantId,
-      content: (ctx.message as any).text,
+      content: (ctx.message as Message.TextMessage).text,
       token: user.token,
     });
 
@@ -162,14 +159,9 @@ export class ChatBotService {
    */
   public async handleMessage(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
+    if (!user.token) return ctx.replyWithHTML(messages.greeting);
 
-    if (!user.token) {
-      return ctx.replyWithMarkdownV2(
-        'Please set your API token first by typing "/token <YOUR_OPENAI_TOKEN>"',
-      );
-    }
-
-    await this.initializeAssistantAndThread(user, ctx);
+    await this.initializeAssistantAndThread(user);
     await this.processMessage(user, ctx);
   }
 }

@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { TelegramService } from './telegram.service';
 

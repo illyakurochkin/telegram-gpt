@@ -7,11 +7,15 @@ export class OpenAIService {
   private readonly openAIClient: OpenAIClient = new OpenAIClient();
 
   async createThread({ token }: { token: string }): Promise<string> {
-    return this.openAIClient.createThread({ token });
+    const threadId = await this.openAIClient.createThread({ token });
+    this.logger.log(`created thread ${threadId}`);
+    return threadId;
   }
 
   async getMessages({ threadId, token }: { threadId: string; token: string }) {
-    return this.openAIClient.getMessages({ threadId, token });
+    const messages = await this.openAIClient.getMessages({ threadId, token });
+    this.logger.log(`got ${messages.length} messages from thread ${threadId}`);
+    return messages;
   }
 
   async deleteThread({
@@ -21,11 +25,14 @@ export class OpenAIService {
     threadId: string;
     token: string;
   }): Promise<void> {
-    return this.openAIClient.deleteThread({ threadId, token });
+    await this.openAIClient.deleteThread({ threadId, token });
+    this.logger.log(`deleted thread ${threadId}`);
   }
 
   async createAssistant({ token }: { token: string }): Promise<string> {
-    return this.openAIClient.createAssistant({ token });
+    const assistantId = await this.openAIClient.createAssistant({ token });
+    this.logger.log(`created assistant ${assistantId}`);
+    return assistantId;
   }
 
   async deleteAssistant({
@@ -35,7 +42,8 @@ export class OpenAIService {
     assistantId: string;
     token: string;
   }): Promise<void> {
-    return this.openAIClient.deleteAssistant({ assistantId, token });
+    await this.openAIClient.deleteAssistant({ assistantId, token });
+    this.logger.log(`deleted assistant ${assistantId}`);
   }
 
   async getRun({
@@ -47,7 +55,9 @@ export class OpenAIService {
     threadId: string;
     token: string;
   }) {
-    return this.openAIClient.getRun({ runId, token, threadId });
+    const run = await this.openAIClient.getRun({ runId, token, threadId });
+    this.logger.log(`got run ${runId} with status ${run.status}`);
+    return run;
   }
 
   async sendMessage({
@@ -61,24 +71,24 @@ export class OpenAIService {
     content: string;
     token: string;
   }): Promise<string> {
-    console.log('content', content);
-    try {
-      await this.openAIClient.createMessage({ threadId, content, token });
-      return this.openAIClient.createRun({
-        assistantId,
-        threadId,
-        token,
-      });
-    } catch (e) {
-      console.log('e.data', e.data);
-    }
+    await this.openAIClient.createMessage({ threadId, content, token });
+    this.logger.log(`sent message to thread ${threadId}`);
+    const run = await this.openAIClient.createRun({
+      assistantId,
+      threadId,
+      token,
+    });
+    this.logger.log(`created run ${run}`);
+    return run;
   }
 
   /**
    * This method validates the token by calling the models.list() method
-   * @param apiKey
+   * @param token
    */
   async validateToken(token: string): Promise<boolean> {
-    return this.openAIClient.validateToken({ token });
+    const isValid = await this.openAIClient.validateToken({ token });
+    this.logger.log(`token ${token} is ${isValid ? 'valid' : 'invalid'}`);
+    return isValid;
   }
 }
