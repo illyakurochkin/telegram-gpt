@@ -1,21 +1,18 @@
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import {
-  ChatBotModule,
-  OpenAIModule,
-  TelegramModule,
-  UserModule,
-} from './modules';
+import { ChatBotModule, OpenAIModule, UserModule } from './modules';
 import { databaseConfig } from './config/typeorm';
-import { TelegramService } from './modules/telegram';
+import { ChatBotController } from './modules/chatbot';
+import { Telegraf } from 'telegraf';
 
 @Module({
   imports: [
     ChatBotModule,
     OpenAIModule,
     UserModule,
-    TelegramModule,
     TypeOrmModule.forRoot(databaseConfig),
   ],
+  providers: [Telegraf],
+  controllers: [ChatBotController],
 })
 export class AppModule {}
