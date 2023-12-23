@@ -28,7 +28,7 @@ export class ChatBotService {
 
   /**
    * Handle /start command
-   * @param ctx
+   * @param ctx - The telegram context
    */
   public async handleStart(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
@@ -38,7 +38,7 @@ export class ChatBotService {
 
   /**
    * Handle /token command
-   * @param ctx
+   * @param ctx - The telegram context
    */
   public async handleToken(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
@@ -56,7 +56,7 @@ export class ChatBotService {
 
   /**
    * Handle /reset command
-   * @param ctx
+   * @param ctx - The telegram context
    */
   public async handleReset(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
@@ -102,6 +102,7 @@ export class ChatBotService {
     runId: string;
   }) {
     const promise = new Promise<string>((resolve) => {
+      // check run status every second
       const intervalId = setInterval(async () => {
         const run = await this.openAIService.getRun({
           runId,
@@ -109,11 +110,13 @@ export class ChatBotService {
           token: user.token,
         });
 
+        // if run failed, stop checking and resolve with error message
         if (FAILED_RUN_STATUSES.includes(run.status)) {
           clearInterval(intervalId);
           resolve(messages.somethingWentWrong);
         }
 
+        // if run succeeded, stop checking and resolve with response
         if (SUCCESSFUL_RUN_STATUSES.includes(run.status)) {
           clearInterval(intervalId);
 
@@ -122,11 +125,11 @@ export class ChatBotService {
             token: user.token,
           });
 
+          // if no response, resolve with error message
           const response = messages[0]?.content?.[0]?.text?.value;
           resolve(response || messages.somethingWentWrong);
 
-          user.runId = null;
-          await this.userService.updateUser(user);
+          await this.userService.resetUserRun(user);
         }
       }, 1000);
     });
@@ -155,7 +158,7 @@ export class ChatBotService {
 
   /**
    * Handle any telegram text message
-   * @param ctx
+   * @param ctx - The telegram context
    */
   public async handleMessage(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);

@@ -30,4 +30,9 @@ export class UserService {
   public async updateUser(user: User) {
     await this.entityManager.save(user);
   }
+
+  public async resetUserRun(user: User) {
+    user.runId = null;
+    await this.entityManager.save(user);
+  }
 }
