@@ -8,6 +8,10 @@ export class UserService {
 
   constructor(private readonly entityManager: EntityManager) {}
 
+  public async findAllUsers() {
+    return this.entityManager.find(User);
+  }
+
   public async findOrCreateUser(userId: number) {
     return (
       (await this.entityManager.findOne(User, { where: { userId } })) ||

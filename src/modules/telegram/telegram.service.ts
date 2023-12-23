@@ -15,10 +15,7 @@ export class TelegramService {
    * @param command - The command to register
    * @param handler - The handler to register
    */
-  public registerCommand(
-    command: string,
-    handler: (ctx: Context) => Promise<void>,
-  ) {
+  public registerCommand(command: string, handler: (ctx: Context) => any) {
     this.telegraf.command(command, handler);
     this.logger.log(`Registered command /${command}`);
   }
@@ -27,7 +24,7 @@ export class TelegramService {
    * This method registers a message handler
    * @param handler - The handler to register
    */
-  public registerMessageHandler(handler: (ctx: Context) => Promise<void>) {
+  public registerMessageHandler(handler: (ctx: Context) => any) {
     this.telegraf.on('message', handler);
     this.logger.log(`Registered message handler`);
   }
