@@ -1,25 +1,39 @@
-import { Controller, Get, Post, Req, Res } from '@nestjs/common';
-import { Telegraf } from 'telegraf';
+import {
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  Inject,
+  forwardRef,
+  Logger,
+} from '@nestjs/common';
+import { TelegramService } from '../telegram';
 
 @Controller('/webhook')
 export class ChatBotController {
-  constructor(private readonly telegraf: Telegraf) {}
+  private readonly logger = new Logger(ChatBotController.name);
+
+  constructor(
+    @Inject(forwardRef(() => TelegramService))
+    private readonly telegramService: TelegramService,
+  ) {}
 
   @Post()
   async handleWebhook(@Req() req, @Res() res) {
     const update = req.body;
 
     try {
-      await this.telegraf.handleUpdate(update);
+      await this.telegramService.handleUpdate(update);
     } catch (error) {
-      console.error('Error handling update:', error);
+      this.logger.error('Error handling update:', error);
     }
 
-    res.sendStatus(200); // Respond to the request to acknowledge receipt
+    res.sendStatus(200);
   }
 
   @Get()
   async test() {
-    return 'hello';
+    return `hello-${(Math.random() * 1000).toFixed()}`;
   }
 }
