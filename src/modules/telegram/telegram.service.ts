@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Context, Telegraf } from 'telegraf';
 import { Update } from '@telegraf/types';
 import { URL } from 'url';
-import { toMarkdown } from '../../utils/markdown';
+import { sanitizeMarkdown } from 'telegram-markdown-sanitizer';
 
 @Injectable()
 export class TelegramService {
@@ -43,7 +43,7 @@ export class TelegramService {
    * @param text - The text to send (not parsed)
    */
   public async sendMarkdownMessage(chatId: number, text: string) {
-    const parsed = toMarkdown(text);
+    const parsed = sanitizeMarkdown(text);
 
     try {
       return this.telegraf.telegram.sendMessage(chatId, parsed, {
@@ -70,7 +70,7 @@ export class TelegramService {
     messageId: number,
     text: string,
   ) {
-    const parsed = toMarkdown(text);
+    const parsed = sanitizeMarkdown(text);
 
     try {
       return this.telegraf.telegram.editMessageText(
