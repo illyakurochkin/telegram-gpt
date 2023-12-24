@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { OpenAIModule } from '../openai';
 import { UserModule } from '../user';
 import { TelegramModule } from '../telegram';
@@ -15,7 +15,6 @@ import { AdminHandler } from './handlers/admin.handler';
   providers: [
     // services
     ChatBotService,
-    Logger,
 
     // handlers
     StartHandler,

@@ -5,10 +5,11 @@ import { OpenAIService } from '../../openai';
 import { UserService } from '../../user';
 import { Message } from '@telegraf/types';
 import { messages } from '../../../resources/messages';
+import { LoggerService } from '../../logger/logger.service';
 
 @Injectable()
 export class TokenHandler implements Handler {
-  private readonly logger = new Logger(TokenHandler.name);
+  private readonly logger = new LoggerService(TokenHandler.name);
 
   constructor(
     private readonly userService: UserService,

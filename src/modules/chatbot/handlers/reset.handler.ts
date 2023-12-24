@@ -4,10 +4,11 @@ import { Context } from 'telegraf';
 import { UserService } from '../../user';
 import { OpenAIService } from '../../openai';
 import { messages } from '../../../resources/messages';
+import { LoggerService } from "../../logger/logger.service";
 
 @Injectable()
 export class ResetHandler implements Handler {
-  private readonly logger = new Logger(ResetHandler.name);
+  private readonly logger = new LoggerService(ResetHandler.name);
 
   constructor(
     private readonly userService: UserService,

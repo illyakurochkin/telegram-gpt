@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OpenAIClient } from './openai-client';
+import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
 export class OpenAIService {
-  private readonly logger = new Logger(OpenAIService.name);
+  private readonly logger = new LoggerService(OpenAIService.name);
   private readonly openAIClient: OpenAIClient = new OpenAIClient();
 
   async createThread({ token }: { token: string }): Promise<string> {

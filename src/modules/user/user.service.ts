@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { User } from './user.entity';
+import { LoggerService } from "../logger/logger.service";
 
 @Injectable()
 export class UserService {
-  private readonly logger = new Logger(UserService.name);
+  private readonly logger = new LoggerService(UserService.name);
 
   constructor(private readonly entityManager: EntityManager) {}
 

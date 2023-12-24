@@ -7,10 +7,11 @@ import { TokenHandler } from './handlers/token.handler';
 import { ResetHandler } from './handlers/reset.handler';
 import { MessageHandler } from './handlers/message.handler';
 import { AdminHandler } from './handlers/admin.handler';
+import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
 export class ChatBotService {
-  private readonly logger = new Logger(ChatBotService.name);
+  private readonly logger = new LoggerService(ChatBotService.name);
 
   constructor(
     // services

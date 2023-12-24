@@ -4,10 +4,11 @@ import { Handler } from './handler.interface';
 import { UserService } from '../../user';
 import { messages } from '../../../resources/messages';
 import { TelegramService } from '../../telegram';
+import { LoggerService } from "../../logger/logger.service";
 
 @Injectable()
 export class StartHandler implements Handler {
-  private readonly logger = new Logger(StartHandler.name);
+  private readonly logger = new LoggerService(StartHandler.name);
 
   constructor(
     private readonly userService: UserService,

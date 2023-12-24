@@ -6,13 +6,13 @@ import {
   Res,
   Inject,
   forwardRef,
-  Logger,
 } from '@nestjs/common';
 import { TelegramService } from '../telegram';
+import { LoggerService } from '../logger/logger.service';
 
 @Controller('/webhook')
 export class ChatBotController {
-  private readonly logger = new Logger(ChatBotController.name);
+  private readonly logger = new LoggerService(ChatBotController.name);
 
   constructor(
     @Inject(forwardRef(() => TelegramService))

@@ -1,14 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Handler } from './handler.interface';
 import { Context } from 'telegraf';
 import { UserService } from '../../user';
 import { MessageHandler } from './message.handler';
 import { Message } from '@telegraf/types';
 import { TelegramService } from '../../telegram';
+import { LoggerService } from '../../logger/logger.service';
 
 @Injectable()
 export class AdminHandler implements Handler {
-  private readonly logger = new Logger(AdminHandler.name);
+  private readonly logger = new LoggerService(AdminHandler.name);
 
   constructor(
     private readonly userService: UserService,

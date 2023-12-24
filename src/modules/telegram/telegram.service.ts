@@ -3,10 +3,11 @@ import { Context, Telegraf } from 'telegraf';
 import { Update } from '@telegraf/types';
 import { URL } from 'url';
 import { toMarkdown } from '../../utils/markdown';
+import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
 export class TelegramService {
-  private readonly logger = new Logger(TelegramService.name);
+  private readonly logger = new LoggerService(TelegramService.name);
 
   constructor(private readonly telegraf: Telegraf<Context>) {}
 
