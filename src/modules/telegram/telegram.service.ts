@@ -147,6 +147,7 @@ export class TelegramService {
         domain: hostname,
         port: Number(port),
         hookPath: pathname,
+        secretToken: process.env.TELEGRAM_WEBHOOK_SECRET,
       },
     });
   }
