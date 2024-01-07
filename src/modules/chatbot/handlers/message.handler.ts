@@ -98,7 +98,8 @@ export class MessageHandler implements Handler {
     const runId = await this.openAIService.sendMessage({
       threadId: user.threadId,
       assistantId: user.assistantId,
-      content: (ctx.message as Message.TextMessage).text,
+      content: `[date="${new Date().toISOString()}", user="${user.userId}"]\r\n
+${(ctx.message as Message.TextMessage).text}`,
       token: user.token,
     });
 
