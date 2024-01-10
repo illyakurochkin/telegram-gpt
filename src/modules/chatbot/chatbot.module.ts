@@ -9,12 +9,16 @@ import { TokenHandler } from './handlers/token.handler';
 import { ResetHandler } from './handlers/reset.handler';
 import { MessageHandler } from './handlers/message.handler';
 import { AdminHandler } from './handlers/admin.handler';
+import { NewMessageHandler } from './handlers/new-message.handler';
+import { LangchainModule } from '../langchain/langchain.module';
+import { LangchainService } from '../langchain/langchain.service';
 
 @Module({
-  imports: [OpenAIModule, UserModule, TelegramModule],
+  imports: [OpenAIModule, UserModule, TelegramModule, LangchainModule],
   providers: [
     // services
     ChatBotService,
+    LangchainService,
     Logger,
 
     // handlers
@@ -23,6 +27,9 @@ import { AdminHandler } from './handlers/admin.handler';
     ResetHandler,
     AdminHandler,
     MessageHandler,
+
+    // temp
+    NewMessageHandler,
   ],
   exports: [ChatBotService],
   controllers: [ChatBotController],

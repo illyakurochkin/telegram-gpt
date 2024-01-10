@@ -4,6 +4,40 @@ import { Update } from '@telegraf/types';
 import { URL } from 'url';
 import { sanitizeMarkdown } from 'telegram-markdown-sanitizer';
 
+const trottle = (func, wait) => {
+  let timeoutId = null;
+  let lastCallTime = new Date().getTime();
+  let lastCallArgs = null;
+
+  const resetTimeout = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  };
+
+  return (...args) => {
+    if (JSON.stringify(lastCallArgs) === JSON.stringify(args)) {
+      return;
+    }
+
+    const now = new Date().getTime();
+    if (lastCallTime + wait < now) {
+      lastCallTime = now;
+      lastCallArgs = args;
+      resetTimeout();
+      return func(...args);
+    }
+
+    resetTimeout();
+    timeoutId = setTimeout(() => {
+      lastCallTime = new Date().getTime();
+      resetTimeout();
+      func(...args);
+    }, wait);
+  };
+};
+
 @Injectable()
 export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
@@ -115,6 +149,31 @@ export class TelegramService {
 
     const text = await promise;
     await this.editMarkdownMessage(chatId, loadingMessage.message_id, text);
+  }
+
+  public async sendAsyncMessagesStream(
+    chatId: number,
+    loadingText: string,
+    messagesStream: ReadableStream<string>,
+  ) {
+    const loadingMessage = await this.telegraf.telegram.sendMessage(
+      chatId,
+      loadingText,
+    );
+
+    const reader = messagesStream.getReader();
+    let result = await reader.read();
+
+    const debouncedEdit = trottle(this.editMarkdownMessage.bind(this), 300);
+
+    let responseMessage = '';
+
+    while (!result.done) {
+      console.log('result', result);
+      responseMessage += result.value;
+      debouncedEdit(chatId, loadingMessage.message_id, responseMessage || '-');
+      result = await reader.read();
+    }
   }
 
   /**

@@ -5,8 +5,8 @@ import { TelegramService } from '../telegram';
 import { StartHandler } from './handlers/start.handler';
 import { TokenHandler } from './handlers/token.handler';
 import { ResetHandler } from './handlers/reset.handler';
-import { MessageHandler } from './handlers/message.handler';
 import { AdminHandler } from './handlers/admin.handler';
+import { NewMessageHandler } from './handlers/new-message.handler';
 
 @Injectable()
 export class ChatBotService {
@@ -22,7 +22,7 @@ export class ChatBotService {
     private readonly tokenHandler: TokenHandler,
     private readonly resetHandler: ResetHandler,
     private readonly adminHandler: AdminHandler,
-    private readonly messageHandler: MessageHandler,
+    private readonly newMessageHandler: NewMessageHandler,
   ) {
     telegramService.registerCommand(
       'start',
@@ -41,7 +41,7 @@ export class ChatBotService {
       adminHandler.handle.bind(adminHandler),
     );
     telegramService.registerMessageHandler(
-      messageHandler.handle.bind(messageHandler),
+      newMessageHandler.handle.bind(newMessageHandler),
     );
 
     this.logger.log('ChatBotService initialized');
