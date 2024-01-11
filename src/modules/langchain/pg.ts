@@ -13,6 +13,7 @@ export class PGChatMessageHistory extends BaseListChatMessageHistory {
     private readonly pool: Pool,
     private readonly tableName: string,
     private readonly sessionId: string,
+    private readonly messagesLimit?: number,
   ) {
     super();
   }
@@ -21,10 +22,12 @@ export class PGChatMessageHistory extends BaseListChatMessageHistory {
     pool,
     tableName,
     sessionId,
+    messagesLimit,
   }: {
     pool: Pool;
     tableName: string;
     sessionId: string;
+    messagesLimit: number;
   }): Promise<PGChatMessageHistory> {
     await pool.query(`CREATE TABLE IF NOT EXISTS "${tableName}" (
       id SERIAL PRIMARY KEY,
@@ -34,12 +37,16 @@ export class PGChatMessageHistory extends BaseListChatMessageHistory {
       created_at TIMESTAMP DEFAULT NOW()
     );`);
 
-    return new PGChatMessageHistory(pool, tableName, sessionId);
+    return new PGChatMessageHistory(pool, tableName, sessionId, messagesLimit);
   }
 
   async getMessages(): Promise<BaseMessage[]> {
     const result = await this.pool.query(
-      `SELECT * FROM "${this.tableName}" WHERE session_id = $1 ORDER BY created_at ASC`,
+      `SELECT * FROM "${
+        this.tableName
+      }" WHERE session_id = $1 ORDER BY created_at ASC ${
+        this.messagesLimit ? `LIMIT ${this.messagesLimit}` : ''
+      }`,
       [this.sessionId],
     );
     return mapStoredMessagesToChatMessages(

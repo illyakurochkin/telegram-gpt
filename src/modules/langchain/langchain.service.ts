@@ -16,7 +16,10 @@ import { ASSISTANT_INSTRUCTIONS } from '../openai/openai.constant';
 @Injectable()
 export class LangchainService {
   public async executeMessage(userId: number, token: string, message: string) {
-    const model = new ChatOpenAI({ openAIApiKey: token, streaming: true });
+    const model = new ChatOpenAI({
+      openAIApiKey: token,
+      streaming: true,
+    });
 
     const prompt = ChatPromptTemplate.fromMessages([
       new AIMessage(ASSISTANT_INSTRUCTIONS),
@@ -26,6 +29,7 @@ export class LangchainService {
 
     const messageHistory = await PGChatMessageHistory.create({
       pool: new Pool({ connectionString: process.env.DATABASE_URL }),
+      messagesLimit: 5,
       tableName: 'pg_chat_message_history15',
       sessionId: userId.toString(),
     });
