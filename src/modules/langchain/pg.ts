@@ -44,21 +44,31 @@ export class PGChatMessageHistory extends BaseListChatMessageHistory {
     const result = await this.pool.query(
       `SELECT * FROM "${
         this.tableName
-      }" WHERE session_id = $1 ORDER BY created_at ASC ${
+      }" WHERE session_id = $1 ORDER BY created_at DESC ${
         this.messagesLimit ? `LIMIT ${this.messagesLimit}` : ''
       }`,
       [this.sessionId],
     );
+
     return mapStoredMessagesToChatMessages(
-      result.rows.map((row) => ({
-        type: row.message_type,
-        data: {
-          content: row.content,
-          role: undefined,
-          name: undefined,
-          tool_call_id: undefined,
-        },
-      })),
+      result.rows
+        .sort((left, right) => left.created_at - right.created_at)
+        .map((row) => ({
+          type: row.message_type,
+          data: {
+            content: row.content,
+            role: undefined,
+            name: undefined,
+            tool_call_id: undefined,
+          },
+        })),
+    );
+  }
+
+  async clearMessages(): Promise<void> {
+    await this.pool.query(
+      `DELETE FROM "${this.tableName}" WHERE session_id = $1`,
+      [this.sessionId],
     );
   }
 

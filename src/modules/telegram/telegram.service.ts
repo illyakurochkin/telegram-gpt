@@ -169,7 +169,6 @@ export class TelegramService {
     setTimeout(async () => {
       let responseMessage = '';
       while (!result.done) {
-        console.log('result', result);
         responseMessage += result.value;
         debouncedEdit(
           chatId,

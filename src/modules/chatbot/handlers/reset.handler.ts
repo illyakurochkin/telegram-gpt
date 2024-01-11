@@ -4,6 +4,7 @@ import { Context } from 'telegraf';
 import { UserService } from '../../user';
 import { OpenAIService } from '../../openai';
 import { messages } from '../../../resources/messages';
+import { LangchainService } from '../../langchain/langchain.service';
 
 @Injectable()
 export class ResetHandler implements Handler {
@@ -12,6 +13,7 @@ export class ResetHandler implements Handler {
   constructor(
     private readonly userService: UserService,
     private readonly openAIService: OpenAIService,
+    private readonly langchainService: LangchainService,
   ) {}
 
   public async handle(ctx: Context) {
@@ -27,6 +29,7 @@ export class ResetHandler implements Handler {
     // TODO: stop run
 
     await this.userService.resetUser(user);
+    await this.langchainService.clearMessages(user.userId);
     return ctx.replyWithHTML(messages.userReset);
   }
 }
