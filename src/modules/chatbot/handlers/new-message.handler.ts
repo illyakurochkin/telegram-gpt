@@ -35,7 +35,6 @@ export class NewMessageHandler implements Handler {
 
     await this.telegramService.sendAsyncMessagesStream(
       ctx.from.id,
-      messages.processing,
       messagesStream,
     );
   }

@@ -153,29 +153,39 @@ export class TelegramService {
 
   public async sendAsyncMessagesStream(
     chatId: number,
-    loadingText: string,
     messagesStream: ReadableStream<string>,
   ) {
-    const loadingMessage = await this.telegraf.telegram.sendMessage(
-      chatId,
-      loadingText,
-    );
+    await this.telegraf.telegram.sendChatAction(chatId, 'typing');
 
     const reader = messagesStream.getReader();
     let result = await reader.read();
 
+    let responseText = result.value;
+
+    // skip empty messages
+    while (!result.value && !result.done) {
+      result = await reader.read();
+      responseText = result.value;
+    }
+
+    const responseMessage = await this.telegraf.telegram.sendMessage(
+      chatId,
+      responseText,
+    );
+
     const debouncedEdit = trottle(this.editMarkdownMessage.bind(this), 300);
 
     setTimeout(async () => {
-      let responseMessage = '';
       while (!result.done) {
-        responseMessage += result.value;
-        debouncedEdit(
-          chatId,
-          loadingMessage.message_id,
-          responseMessage || '-',
-        );
         result = await reader.read();
+        if (result.value) {
+          responseText += result.value;
+          debouncedEdit(
+            chatId,
+            responseMessage.message_id,
+            responseText || '-',
+          );
+        }
       }
     });
   }
