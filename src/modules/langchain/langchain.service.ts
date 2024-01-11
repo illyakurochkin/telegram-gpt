@@ -5,7 +5,7 @@ import {
   RunnableConfig,
   RunnableWithMessageHistory,
 } from '@langchain/core/runnables';
-import { HumanMessage, AIMessage } from '@langchain/core/messages';
+import { HumanMessage } from '@langchain/core/messages';
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
@@ -30,22 +30,59 @@ export class LangchainService {
     const model = new ChatOpenAI({
       openAIApiKey: token,
       streaming: true,
+      maxTokens: 1000,
+      verbose: true,
     });
 
     const prompt = ChatPromptTemplate.fromMessages([
-      new AIMessage(ASSISTANT_INSTRUCTIONS),
+      new HumanMessage(ASSISTANT_INSTRUCTIONS),
       new MessagesPlaceholder('history'),
       new HumanMessage(message),
     ]);
 
     const messageHistory = await PGChatMessageHistory.create({
       pool: new Pool({ connectionString: process.env.DATABASE_URL }),
-      messagesLimit: 5,
+      messagesLimit: 100,
       tableName: 'pg_chat_message_history15',
       sessionId: userId.toString(),
     });
 
-    const runnable = prompt.pipe(model);
+    const runnable = prompt
+      .pipe(async (elements) => {
+        const messagesWithNumTokens = await Promise.all(
+          elements.messages.map(async (message) => ({
+            message,
+            numTokens: await model.getNumTokens(
+              JSON.stringify(message.toDict()),
+            ),
+          })),
+        );
+
+        return messagesWithNumTokens
+          .reverse()
+          .reduce(
+            (accumulator, { message, numTokens }, index) => {
+              const useNumTokens = accumulator.reduce(
+                (sum, { numTokens: nk }) => sum + nk,
+                0,
+              );
+
+              if (
+                index === messagesWithNumTokens.length - 1 ||
+                useNumTokens + numTokens < model.maxTokens
+              ) {
+                accumulator.push({ message, numTokens });
+              }
+
+              return accumulator;
+            },
+            [] as typeof messagesWithNumTokens,
+          )
+          .map(({ message }) => message)
+          .reverse();
+      })
+      .pipe(model);
+
     const withHistory = new RunnableWithMessageHistory({
       runnable,
       getMessageHistory: () => messageHistory,
