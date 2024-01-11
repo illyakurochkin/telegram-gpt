@@ -44,6 +44,11 @@ export class LangchainService {
 
     const config: RunnableConfig = { configurable: { sessionId: '1' } };
 
-    return withHistory.stream({ input: message }, config);
+    return withHistory.stream(
+      {
+        input: `[date="${new Date().toISOString()}", user="${userId}"]\r\n${message}`,
+      },
+      config,
+    );
   }
 }
