@@ -166,14 +166,19 @@ export class TelegramService {
 
     const debouncedEdit = trottle(this.editMarkdownMessage.bind(this), 300);
 
-    let responseMessage = '';
-
-    while (!result.done) {
-      console.log('result', result);
-      responseMessage += result.value;
-      debouncedEdit(chatId, loadingMessage.message_id, responseMessage || '-');
-      result = await reader.read();
-    }
+    setTimeout(async () => {
+      let responseMessage = '';
+      while (!result.done) {
+        console.log('result', result);
+        responseMessage += result.value;
+        debouncedEdit(
+          chatId,
+          loadingMessage.message_id,
+          responseMessage || '-',
+        );
+        result = await reader.read();
+      }
+    });
   }
 
   /**

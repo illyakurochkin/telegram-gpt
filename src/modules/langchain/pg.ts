@@ -7,7 +7,7 @@ import {
 } from '@langchain/core/messages';
 
 export class PGChatMessageHistory extends BaseListChatMessageHistory {
-  lc_namespace: string[] = ['langchain', 'stores', 'message', 'mongodb'];
+  lc_namespace: string[] = ['langchain', 'stores', 'message', 'pg'];
 
   private constructor(
     private readonly pool: Pool,
