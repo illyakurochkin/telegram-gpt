@@ -13,6 +13,7 @@ import { NewMessageHandler } from './handlers/new-message.handler';
 import { LangchainModule } from '../langchain/langchain.module';
 import { LangchainService } from '../langchain/langchain.service';
 import { TextToSpeechHandler } from './handlers/text-to-speech.handler';
+import { SpeechToTextHandler } from './handlers/spech-to-text.handler';
 
 @Module({
   imports: [OpenAIModule, UserModule, TelegramModule, LangchainModule],
@@ -30,6 +31,7 @@ import { TextToSpeechHandler } from './handlers/text-to-speech.handler';
 
     NewMessageHandler,
     TextToSpeechHandler,
+    SpeechToTextHandler,
     MessageHandler,
   ],
   exports: [ChatBotService],

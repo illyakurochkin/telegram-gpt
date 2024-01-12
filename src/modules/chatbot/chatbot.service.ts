@@ -8,6 +8,9 @@ import { ResetHandler } from './handlers/reset.handler';
 import { AdminHandler } from './handlers/admin.handler';
 import { NewMessageHandler } from './handlers/new-message.handler';
 import { TextToSpeechHandler } from './handlers/text-to-speech.handler';
+import { SpeechToTextHandler } from './handlers/spech-to-text.handler';
+import { Message } from '@telegraf/types';
+import TextMessage = Message.TextMessage;
 
 @Injectable()
 export class ChatBotService {
@@ -25,6 +28,7 @@ export class ChatBotService {
     private readonly adminHandler: AdminHandler,
     private readonly newMessageHandler: NewMessageHandler,
     private readonly textToSpeechHandler: TextToSpeechHandler,
+    private readonly speechToTextHandler: SpeechToTextHandler,
   ) {
     telegramService.registerCommand(
       'start',
@@ -46,9 +50,15 @@ export class ChatBotService {
       'v',
       textToSpeechHandler.handle.bind(textToSpeechHandler),
     );
-    telegramService.registerMessageHandler(
-      newMessageHandler.handle.bind(newMessageHandler),
-    );
+    telegramService.registerMessageHandler((ctx) => {
+      if ((ctx.message as TextMessage).text) {
+        return newMessageHandler.handle(ctx);
+      }
+
+      if ((ctx.message as Message.VoiceMessage).voice) {
+        return speechToTextHandler.handle(ctx);
+      }
+    });
 
     this.logger.log('ChatBotService initialized');
   }

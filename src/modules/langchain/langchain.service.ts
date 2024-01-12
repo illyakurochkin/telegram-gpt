@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ChatOpenAI } from '@langchain/openai';
 import { Pool } from 'pg';
 import { RunnableWithMessageHistory } from '@langchain/core/runnables';
-import { HumanMessage, MessageContent } from '@langchain/core/messages';
+import { HumanMessage } from '@langchain/core/messages';
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
@@ -69,6 +69,7 @@ export class LangchainService {
     message: string;
   }): Promise<ReadableStream<string>> {
     const model = new ChatOpenAI({
+      modelName: 'gpt-3.5-turbo',
       openAIApiKey: token,
       streaming: true,
       maxTokens: 1000,

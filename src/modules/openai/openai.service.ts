@@ -23,6 +23,16 @@ export class OpenAIService {
     return speechFile;
   }
 
+  async speechToText({ token, speech }: { token: string; speech: File }) {
+    const openai = new OpenAI({ apiKey: token });
+    const result = await openai.audio.transcriptions.create({
+      file: speech,
+      model: 'whisper-1',
+    });
+
+    return result.text;
+  }
+
   async createThread({ token }: { token: string }): Promise<string> {
     const threadId = await this.openAIClient.createThread({ token });
     this.logger.log(`created thread ${threadId}`);

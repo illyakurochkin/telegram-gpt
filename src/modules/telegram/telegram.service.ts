@@ -9,7 +9,7 @@ import { sleep } from './telegram.utils';
 export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
 
-  constructor(private readonly telegraf: Telegraf<Context>) {}
+  constructor(public readonly telegraf: Telegraf<Context>) {}
 
   /**
    * This method registers a command handler
@@ -135,6 +135,10 @@ export class TelegramService {
 
   public async startVoiceRecording(chatId: number) {
     await this.telegraf.telegram.sendChatAction(chatId, 'record_voice');
+  }
+
+  public async startChoosingSticker(chatId: number) {
+    await this.telegraf.telegram.sendChatAction(chatId, 'choose_sticker');
   }
 
   public async sendAsyncMessagesStream(
