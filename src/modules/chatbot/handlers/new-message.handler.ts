@@ -4,8 +4,8 @@ import { Context } from 'telegraf';
 import { UserService } from '../../user';
 import { LangchainService } from '../../langchain/langchain.service';
 import { TelegramService } from '../../telegram';
-import { messages } from '../../../resources/messages';
 import { Message } from '@telegraf/types';
+import { messages } from '../../../resources/messages';
 
 @Injectable()
 export class NewMessageHandler implements Handler {
@@ -17,21 +17,13 @@ export class NewMessageHandler implements Handler {
 
   public async handle(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
-    if (!user.token) return ctx.reply('no token');
+    if (!user.token) return ctx.replyWithHTML(messages.greeting);
 
-    const response = await this.langchainService.executeMessage(
-      user.userId,
-      user.token,
-      (ctx.message as Message.TextMessage).text,
-    );
-
-    const messagesStream = response.pipeThrough(
-      new TransformStream({
-        transform(chunk, controller) {
-          controller.enqueue(chunk.content);
-        },
-      }),
-    );
+    const messagesStream = await this.langchainService.executeMessage({
+      userId: user.userId,
+      token: user.token,
+      message: (ctx.message as Message.TextMessage).text,
+    });
 
     await this.telegramService.sendAsyncMessagesStream(
       ctx.from.id,

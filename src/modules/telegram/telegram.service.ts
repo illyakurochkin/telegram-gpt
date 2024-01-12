@@ -3,40 +3,7 @@ import { Context, Telegraf } from 'telegraf';
 import { Update } from '@telegraf/types';
 import { URL } from 'url';
 import { sanitizeMarkdown } from 'telegram-markdown-sanitizer';
-
-const trottle = (func, wait) => {
-  let timeoutId = null;
-  let lastCallTime = new Date().getTime();
-  let lastCallArgs = null;
-
-  const resetTimeout = () => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      timeoutId = null;
-    }
-  };
-
-  return (...args) => {
-    if (JSON.stringify(lastCallArgs) === JSON.stringify(args)) {
-      return;
-    }
-
-    const now = new Date().getTime();
-    if (lastCallTime + wait < now) {
-      lastCallTime = now;
-      lastCallArgs = args;
-      resetTimeout();
-      return func(...args);
-    }
-
-    resetTimeout();
-    timeoutId = setTimeout(() => {
-      lastCallTime = new Date().getTime();
-      resetTimeout();
-      func(...args);
-    }, wait);
-  };
-};
+import { sleep } from './telegram.utils';
 
 @Injectable()
 export class TelegramService {
@@ -98,13 +65,20 @@ export class TelegramService {
    * @param chatId - The chat to send the message to
    * @param messageId - The message to edit
    * @param text - The text to send (not parsed)
+   * @param postfix - The text to append to the message (should be valid markdown)
    */
-  public async editMarkdownMessage(
-    chatId: number,
-    messageId: number,
-    text: string,
-  ) {
-    const parsed = sanitizeMarkdown(text);
+  public async editMarkdownMessage({
+    chatId,
+    messageId,
+    text,
+    postfix = '',
+  }: {
+    chatId: number;
+    messageId: number;
+    text: string;
+    postfix?: string;
+  }) {
+    const parsed = sanitizeMarkdown(text) + postfix;
 
     try {
       return this.telegraf.telegram.editMessageText(
@@ -142,20 +116,32 @@ export class TelegramService {
     loadingText: string,
     promise: Promise<string>,
   ) {
-    const loadingMessage = await this.telegraf.telegram.sendMessage(
-      chatId,
-      loadingText,
-    );
+    await this.telegraf.telegram.sendChatAction(chatId, 'typing');
 
     const text = await promise;
-    await this.editMarkdownMessage(chatId, loadingMessage.message_id, text);
+    await this.sendMarkdownMessage(chatId, text);
+  }
+
+  public async sendAsyncVoiceMessage(chatId: number, promise: Promise<string>) {
+    await this.telegraf.telegram.sendChatAction(chatId, 'record_voice');
+
+    const file = await promise;
+    await this.telegraf.telegram.sendVoice(chatId, file);
+  }
+
+  public async startTyping(chatId: number) {
+    await this.telegraf.telegram.sendChatAction(chatId, 'typing');
+  }
+
+  public async startVoiceRecording(chatId: number) {
+    await this.telegraf.telegram.sendChatAction(chatId, 'record_voice');
   }
 
   public async sendAsyncMessagesStream(
     chatId: number,
     messagesStream: ReadableStream<string>,
   ) {
-    await this.telegraf.telegram.sendChatAction(chatId, 'typing');
+    await this.startTyping(chatId);
 
     const reader = messagesStream.getReader();
     let result = await reader.read();
@@ -173,18 +159,31 @@ export class TelegramService {
       responseText,
     );
 
-    const debouncedEdit = trottle(this.editMarkdownMessage.bind(this), 300);
+    let lastSentResponseText = responseText;
 
+    // update telegram message with timeout
+    setTimeout(async () => {
+      while (true) {
+        await sleep(1000);
+        if (responseText && responseText !== lastSentResponseText) {
+          await this.editMarkdownMessage({
+            chatId,
+            messageId: responseMessage.message_id,
+            text: responseText,
+            postfix: result.done ? '' : '\n|| ✨ ✨ ✨ ✨ ||',
+          });
+          lastSentResponseText = responseText;
+          if (result.done) return;
+        }
+      }
+    });
+
+    // update responseText using the stream
     setTimeout(async () => {
       while (!result.done) {
         result = await reader.read();
         if (result.value) {
           responseText += result.value;
-          debouncedEdit(
-            chatId,
-            responseMessage.message_id,
-            responseText || '-',
-          );
         }
       }
     });

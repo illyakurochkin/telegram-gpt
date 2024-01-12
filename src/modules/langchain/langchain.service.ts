@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ChatOpenAI } from '@langchain/openai';
 import { Pool } from 'pg';
-import {
-  RunnableConfig,
-  RunnableWithMessageHistory,
-} from '@langchain/core/runnables';
-import { HumanMessage } from '@langchain/core/messages';
+import { RunnableWithMessageHistory } from '@langchain/core/runnables';
+import { HumanMessage, MessageContent } from '@langchain/core/messages';
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
@@ -26,7 +23,51 @@ export class LangchainService {
     await messageHistory.clearMessages();
   }
 
-  public async executeMessage(userId: number, token: string, message: string) {
+  private async filterMessages(model, messages: any[]) {
+    const messagesWithNumTokens = await Promise.all(
+      messages.map(async (message) => ({
+        message,
+        numTokens: await model.getNumTokens(JSON.stringify(message.toDict())),
+      })),
+    );
+
+    return messagesWithNumTokens
+      .reverse()
+      .reduce(
+        (accumulator, { message, numTokens }, index) => {
+          const useNumTokens = accumulator.reduce(
+            (sum, { numTokens: nk }) => sum + nk,
+            0,
+          );
+
+          if (
+            index === messagesWithNumTokens.length - 1 ||
+            useNumTokens + numTokens < model.maxTokens
+          ) {
+            accumulator.push({ message, numTokens });
+          }
+
+          return accumulator;
+        },
+        [] as typeof messagesWithNumTokens,
+      )
+      .map(({ message }) => message)
+      .reverse();
+  }
+
+  private createMetaPrefix(userId: number) {
+    return `[date="${new Date().toISOString()}", user="${userId}"]\n\n`;
+  }
+
+  public async executeMessage({
+    userId,
+    token,
+    message,
+  }: {
+    userId: number;
+    token: string;
+    message: string;
+  }): Promise<ReadableStream<string>> {
     const model = new ChatOpenAI({
       openAIApiKey: token,
       streaming: true,
@@ -48,39 +89,7 @@ export class LangchainService {
     });
 
     const runnable = prompt
-      .pipe(async (elements) => {
-        const messagesWithNumTokens = await Promise.all(
-          elements.messages.map(async (message) => ({
-            message,
-            numTokens: await model.getNumTokens(
-              JSON.stringify(message.toDict()),
-            ),
-          })),
-        );
-
-        return messagesWithNumTokens
-          .reverse()
-          .reduce(
-            (accumulator, { message, numTokens }, index) => {
-              const useNumTokens = accumulator.reduce(
-                (sum, { numTokens: nk }) => sum + nk,
-                0,
-              );
-
-              if (
-                index === messagesWithNumTokens.length - 1 ||
-                useNumTokens + numTokens < model.maxTokens
-              ) {
-                accumulator.push({ message, numTokens });
-              }
-
-              return accumulator;
-            },
-            [] as typeof messagesWithNumTokens,
-          )
-          .map(({ message }) => message)
-          .reverse();
-      })
+      .pipe(({ messages }) => this.filterMessages(model, messages))
       .pipe(model);
 
     const withHistory = new RunnableWithMessageHistory({
@@ -90,13 +99,17 @@ export class LangchainService {
       historyMessagesKey: 'history',
     });
 
-    const config: RunnableConfig = { configurable: { sessionId: '1' } };
+    const stream = await withHistory.stream(
+      { input: `${this.createMetaPrefix(userId)}\n${message}` },
+      { configurable: { sessionId: '1' } },
+    );
 
-    return withHistory.stream(
-      {
-        input: `[date="${new Date().toISOString()}", user="${userId}"]\r\n${message}`,
-      },
-      config,
+    return stream.pipeThrough(
+      new TransformStream({
+        transform(chunk, controller) {
+          controller.enqueue(chunk.content as string);
+        },
+      }),
     );
   }
 }

@@ -7,6 +7,7 @@ import { TokenHandler } from './handlers/token.handler';
 import { ResetHandler } from './handlers/reset.handler';
 import { AdminHandler } from './handlers/admin.handler';
 import { NewMessageHandler } from './handlers/new-message.handler';
+import { TextToSpeechHandler } from './handlers/text-to-speech.handler';
 
 @Injectable()
 export class ChatBotService {
@@ -23,6 +24,7 @@ export class ChatBotService {
     private readonly resetHandler: ResetHandler,
     private readonly adminHandler: AdminHandler,
     private readonly newMessageHandler: NewMessageHandler,
+    private readonly textToSpeechHandler: TextToSpeechHandler,
   ) {
     telegramService.registerCommand(
       'start',
@@ -39,6 +41,10 @@ export class ChatBotService {
     telegramService.registerCommand(
       'admin',
       adminHandler.handle.bind(adminHandler),
+    );
+    telegramService.registerCommand(
+      'v',
+      textToSpeechHandler.handle.bind(textToSpeechHandler),
     );
     telegramService.registerMessageHandler(
       newMessageHandler.handle.bind(newMessageHandler),

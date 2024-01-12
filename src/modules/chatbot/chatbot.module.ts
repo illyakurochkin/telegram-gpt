@@ -12,6 +12,7 @@ import { AdminHandler } from './handlers/admin.handler';
 import { NewMessageHandler } from './handlers/new-message.handler';
 import { LangchainModule } from '../langchain/langchain.module';
 import { LangchainService } from '../langchain/langchain.service';
+import { TextToSpeechHandler } from './handlers/text-to-speech.handler';
 
 @Module({
   imports: [OpenAIModule, UserModule, TelegramModule, LangchainModule],
@@ -26,10 +27,10 @@ import { LangchainService } from '../langchain/langchain.service';
     TokenHandler,
     ResetHandler,
     AdminHandler,
-    MessageHandler,
 
-    // temp
     NewMessageHandler,
+    TextToSpeechHandler,
+    MessageHandler,
   ],
   exports: [ChatBotService],
   controllers: [ChatBotController],

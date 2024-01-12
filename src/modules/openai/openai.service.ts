@@ -1,10 +1,27 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OpenAIClient } from './openai-client';
+import * as path from 'path';
+import OpenAI from 'openai';
+import * as fs from 'fs';
 
 @Injectable()
 export class OpenAIService {
   private readonly logger = new Logger(OpenAIService.name);
   private readonly openAIClient: OpenAIClient = new OpenAIClient();
+
+  async textToSpeech({ token, text }: { token: string; text: string }) {
+    const speechFile = path.resolve(`./speech-${new Date().getTime()}.mp3`);
+    const openai = new OpenAI({ apiKey: token });
+    const mp3 = await openai.audio.speech.create({
+      model: 'tts-1',
+      voice: 'alloy',
+      input: text,
+    });
+    console.log(speechFile);
+    const buffer = Buffer.from(await mp3.arrayBuffer());
+    await fs.promises.writeFile(speechFile, buffer);
+    return speechFile;
+  }
 
   async createThread({ token }: { token: string }): Promise<string> {
     const threadId = await this.openAIClient.createThread({ token });
