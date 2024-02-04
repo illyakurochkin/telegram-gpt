@@ -9,7 +9,7 @@ import { sleep } from './telegram.utils';
 export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
 
-  constructor(public readonly telegraf: Telegraf<Context>) {}
+  constructor(private readonly telegraf: Telegraf<Context>) {}
 
   /**
    * This method registers a command handler

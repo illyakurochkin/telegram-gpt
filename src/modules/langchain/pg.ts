@@ -9,7 +9,7 @@ import {
 export class PGChatMessageHistory extends BaseListChatMessageHistory {
   lc_namespace: string[] = ['langchain', 'stores', 'message', 'pg'];
 
-  private constructor(
+  protected constructor(
     private readonly pool: Pool,
     private readonly tableName: string,
     private readonly sessionId: string,
@@ -59,6 +59,7 @@ export class PGChatMessageHistory extends BaseListChatMessageHistory {
             content: row.content,
             role: undefined,
             name: undefined,
+            id: row.id.toString(),
             tool_call_id: undefined,
           },
         })),
@@ -82,5 +83,31 @@ export class PGChatMessageHistory extends BaseListChatMessageHistory {
       message._getType(),
       this.sessionId,
     ]);
+  }
+
+  async getMessagesByIds(ids: string[]): Promise<BaseMessage[]> {
+    if (!ids.length) return [];
+    const result = await this.pool.query(
+      `SELECT * FROM "${this.tableName}" WHERE id IN (${ids.join(
+        ',',
+      )}) ORDER BY created_at DESC ${
+        this.messagesLimit ? `LIMIT ${this.messagesLimit}` : ''
+      }`,
+      [],
+    );
+
+    return mapStoredMessagesToChatMessages(
+      result.rows
+        .sort((left, right) => left.created_at - right.created_at)
+        .map((row) => ({
+          type: row.message_type,
+          data: {
+            content: row.content,
+            role: undefined,
+            name: undefined,
+            tool_call_id: undefined,
+          },
+        })),
+    );
   }
 }

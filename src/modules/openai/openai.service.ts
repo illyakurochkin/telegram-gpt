@@ -17,7 +17,6 @@ export class OpenAIService {
       voice: 'alloy',
       input: text,
     });
-    console.log(speechFile);
     const buffer = Buffer.from(await mp3.arrayBuffer());
     await fs.promises.writeFile(speechFile, buffer);
     return speechFile;
