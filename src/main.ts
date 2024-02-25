@@ -1,8 +1,8 @@
-import { NestFactory } from '@nestjs/core';
-import { Logger } from '@nestjs/common';
-import { TelegramService } from './modules/telegram';
-import { AppModule } from './app.module';
-import 'dotenv/config';
+import { NestFactory } from "@nestjs/core";
+import { Logger } from "@nestjs/common";
+import { TelegramService } from "./modules/telegram";
+import { AppModule } from "./app.module";
+import "dotenv/config";
 
 async function bootstrap() {
   // Create the NestJS application
@@ -20,10 +20,10 @@ async function bootstrap() {
     // Start the bot in webhook mode
     await app.listen(port);
     await chatBotService.launchWebhook(webhookUrl);
-    logger.log(`Webhook bot started, listening on port ${port}`, 'Bootstrap');
+    logger.log(`Webhook bot started, listening on port ${port}`, "Bootstrap");
   } else {
     // Start the bot in polling mode
-    logger.log('Long polling bot started', 'Bootstrap');
+    logger.log("Long polling bot started", "Bootstrap");
     await chatBotService.launchPolling();
   }
 }

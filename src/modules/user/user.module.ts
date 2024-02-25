@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { UserService } from './user.service';
-import { EntityManager } from 'typeorm';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { Module } from "@nestjs/common";
+import { UserService } from "./user.service";
+import { EntityManager } from "typeorm";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 @Module({
   imports: [EntityManager],

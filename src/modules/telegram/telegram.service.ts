@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Context, Telegraf } from 'telegraf';
-import { Update } from '@telegraf/types';
-import { URL } from 'url';
-import { sanitizeMarkdown } from 'telegram-markdown-sanitizer';
-import { sleep } from './telegram.utils';
+import { Injectable, Logger } from "@nestjs/common";
+import { Context, Telegraf } from "telegraf";
+import type { Update } from "@telegraf/types";
+import { URL } from "url";
+import { sanitizeMarkdown } from "telegram-markdown-sanitizer";
+import { sleep } from "./telegram.utils";
 
 @Injectable()
 export class TelegramService {
@@ -26,8 +26,8 @@ export class TelegramService {
    * @param handler - The handler to register
    */
   public registerMessageHandler(handler: (ctx: Context) => any) {
-    this.telegraf.on('message', handler);
-    this.logger.log(`Registered message handler`);
+    this.telegraf.on("message", handler);
+    this.logger.log(`registered message handler`);
   }
 
   /**
@@ -48,10 +48,10 @@ export class TelegramService {
 
     try {
       return this.telegraf.telegram.sendMessage(chatId, parsed, {
-        parse_mode: 'MarkdownV2',
+        parse_mode: "MarkdownV2",
       });
     } catch {
-      this.logger.error("Couldn't parse markdown, sending as text", {
+      this.logger.error("couldn't parse markdown, sending as text", {
         text,
         parsed,
       });
@@ -71,7 +71,7 @@ export class TelegramService {
     chatId,
     messageId,
     text,
-    postfix = '',
+    postfix = "",
   }: {
     chatId: number;
     messageId: number;
@@ -87,11 +87,11 @@ export class TelegramService {
         undefined,
         parsed,
         {
-          parse_mode: 'MarkdownV2',
+          parse_mode: "MarkdownV2",
         },
       );
     } catch {
-      this.logger.error("Couldn't parse markdown, sending as text", {
+      this.logger.error("couldn't parse markdown, sending as text", {
         text,
         parsed,
       });
@@ -116,39 +116,47 @@ export class TelegramService {
     loadingText: string,
     promise: Promise<string>,
   ) {
-    await this.telegraf.telegram.sendChatAction(chatId, 'typing');
+    this.logger.log("sending async message", { chatId, loadingText });
+    await this.telegraf.telegram.sendChatAction(chatId, "typing");
 
     const text = await promise;
+    this.logger.log("sending async message result", { chatId, text });
     await this.sendMarkdownMessage(chatId, text);
   }
 
+  // TODO: check if this method is used
   public async sendAsyncVoiceMessage(chatId: number, promise: Promise<string>) {
-    await this.telegraf.telegram.sendChatAction(chatId, 'record_voice');
+    await this.telegraf.telegram.sendChatAction(chatId, "record_voice");
 
     const file = await promise;
     await this.telegraf.telegram.sendVoice(chatId, file);
   }
 
   public async startTyping(chatId: number) {
-    await this.telegraf.telegram.sendChatAction(chatId, 'typing');
+    this.logger.log("start typing for chatId", chatId);
+    await this.telegraf.telegram.sendChatAction(chatId, "typing");
   }
 
   public async startVoiceRecording(chatId: number) {
-    await this.telegraf.telegram.sendChatAction(chatId, 'record_voice');
+    this.logger.log("start voice recording for chatId", chatId);
+    await this.telegraf.telegram.sendChatAction(chatId, "record_voice");
   }
 
   public async startChoosingSticker(chatId: number) {
-    await this.telegraf.telegram.sendChatAction(chatId, 'choose_sticker');
+    this.logger.log("start choosing sticker for chatId", chatId);
+    await this.telegraf.telegram.sendChatAction(chatId, "choose_sticker");
   }
 
   public async sendAsyncMessagesStream(
     chatId: number,
     messagesStream: ReadableStream<string>,
   ) {
-    await this.startTyping(chatId);
+    this.logger.log("sending async messages stream...", { chatId });
 
     const reader = messagesStream.getReader();
     let result = await reader.read();
+
+    await this.startTyping(chatId);
 
     let responseText = result.value;
 
@@ -157,6 +165,11 @@ export class TelegramService {
       result = await reader.read();
       responseText = result.value;
     }
+
+    this.logger.log("sending async messages stream initial message", {
+      chatId,
+      responseText,
+    });
 
     const responseMessage = await this.telegraf.telegram.sendMessage(
       chatId,
@@ -174,7 +187,7 @@ export class TelegramService {
             chatId,
             messageId: responseMessage.message_id,
             text: responseText,
-            postfix: result.done ? '' : '\n|| ✨ ✨ ✨ ✨ ||',
+            postfix: result.done ? "" : "\n|| ✨ ✨ ✨ ✨ ||",
           });
           lastSentResponseText = responseText;
           if (result.done) return;
@@ -208,17 +221,20 @@ export class TelegramService {
    * @param update
    */
   public async handleUpdate(update: Update) {
-    return this.telegraf.handleUpdate(update);
+    this.logger.log("handling update...", { update });
+    await this.telegraf.handleUpdate(update);
+    this.logger.log("update handled");
   }
 
   /**
    * This method sets the webhook for the telegram bot
    * @param webhookUrl - The url to set the webhook to
    */
-  public async launchWebhook(webhookUrl: string) {
+  public async launchWebhook(webhookUrl: string): Promise<void> {
+    this.logger.log("launching webhook...", { webhookUrl });
     const { hostname, port, pathname } = new URL(webhookUrl);
 
-    return this.telegraf.launch({
+    await this.telegraf.launch({
       webhook: {
         domain: hostname,
         port: Number(port),
@@ -226,12 +242,15 @@ export class TelegramService {
         secretToken: process.env.TELEGRAM_WEBHOOK_SECRET,
       },
     });
+    this.logger.log("webhook launched");
   }
 
   /**
    * This method starts the polling for the telegram bot
    */
-  public async launchPolling() {
-    return this.telegraf.launch();
+  public async launchPolling(): Promise<void> {
+    this.logger.log("launching polling...");
+    await this.telegraf.launch();
+    this.logger.log("polling launched");
   }
 }

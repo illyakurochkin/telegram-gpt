@@ -7,10 +7,10 @@ import {
   Inject,
   forwardRef,
   Logger,
-} from '@nestjs/common';
-import { TelegramService } from '../telegram';
+} from "@nestjs/common";
+import { TelegramService } from "../telegram";
 
-@Controller('/webhook')
+@Controller("/webhook")
 export class ChatBotController {
   private readonly logger = new Logger(ChatBotController.name);
 
@@ -26,7 +26,7 @@ export class ChatBotController {
     try {
       await this.telegramService.handleUpdate(update);
     } catch (error) {
-      this.logger.error('Error handling update:', error);
+      this.logger.error("Error handling update:", error);
     }
 
     res.sendStatus(200);

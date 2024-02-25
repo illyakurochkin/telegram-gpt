@@ -60,9 +60,9 @@ export class OpenAIClient {
 
   async createAssistant({ token }: { token: string }): Promise<string> {
     const assistant = await this.client.post(
-      '/assistants',
+      "/assistants",
       {
-        model: 'gpt-3.5-turbo',
+        model: "gpt-3.5-turbo",
         instructions: ASSISTANT_INSTRUCTIONS,
       },
       { headers: { Authorization: `Bearer ${token}` } },

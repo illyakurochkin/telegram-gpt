@@ -1,14 +1,14 @@
-import { PromptTemplate } from '@langchain/core/prompts';
-import { RunnableSequence } from '@langchain/core/runnables';
-import { JsonOutputParser } from '../json-output-parser';
-import { z } from 'zod';
-import { filterMessages } from './utils';
-import { OpenAI } from '@langchain/openai';
-import { BaseMessage } from '@langchain/core/messages';
+import { PromptTemplate } from "@langchain/core/prompts";
+import { RunnableSequence } from "@langchain/core/runnables";
+import { JsonOutputParser } from "../json-output-parser";
+import { z } from "zod";
+import { filterMessages } from "./utils";
+import { OpenAI } from "@langchain/openai";
+import { BaseMessage } from "@langchain/core/messages";
 
 export const getRephraseChain = (token: string, messages: BaseMessage[]) => {
   const model = new OpenAI({
-    modelName: 'gpt-3.5-turbo',
+    modelName: "gpt-3.5-turbo",
     openAIApiKey: token,
     streaming: true,
     maxTokens: 3000,

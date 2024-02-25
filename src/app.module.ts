@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ChatBotModule, OpenAIModule, UserModule } from './modules';
-import { databaseConfig } from './config/typeorm';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { ChatBotModule, OpenAIModule, UserModule } from "./modules";
+import { databaseConfig } from "./config/typeorm";
 
 @Module({
   imports: [

@@ -1,25 +1,29 @@
-import { Handler } from './handler.interface';
-import { LangchainService } from '../../langchain/langchain.service';
-import { Context } from 'telegraf';
-import { Message } from '@telegraf/types';
-import { TelegramService } from '../../telegram';
-import { messages } from '../../../resources/messages';
-import { UserService } from '../../user';
-import { streamToPromise } from '../../langchain/langchain.utils';
-import { Injectable } from '@nestjs/common';
-import { OpenAIService } from '../../openai';
-import * as fs from 'fs';
+import { LangchainService } from "../../langchain/langchain.service";
+import { Context } from "telegraf";
+import { Message } from "@telegraf/types";
+import { TelegramService } from "../../telegram";
+import { messages } from "../../../resources/messages";
+import { UserService } from "../../user";
+import { streamToPromise } from "../../langchain/langchain.utils";
+import { Injectable, Logger } from "@nestjs/common";
+import { OpenAIService } from "../../openai";
+import * as fs from "fs";
+import { BaseHandler } from "./base.handler";
 
 @Injectable()
-export class TextToSpeechHandler implements Handler {
+export class TextToSpeechHandler extends BaseHandler {
+  private readonly logger = new Logger(TextToSpeechHandler.name);
+
   constructor(
     private readonly langchainService: LangchainService,
     private readonly telegramService: TelegramService,
     private readonly openAIService: OpenAIService,
     private readonly userService: UserService,
-  ) {}
+  ) {
+    super();
+  }
 
-  public async handle(ctx: Context) {
+  protected async handle(ctx: Context) {
     const user = await this.userService.findOrCreateUser(ctx.from.id);
     if (!user.token) return ctx.replyWithHTML(messages.greeting);
 

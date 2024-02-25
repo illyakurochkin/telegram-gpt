@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { EntityManager } from 'typeorm';
-import { User } from './user.entity';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { Injectable, Logger } from "@nestjs/common";
+import { EntityManager } from "typeorm";
+import { User } from "./user.entity";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 @Injectable()
 export class UserService {
@@ -30,9 +30,9 @@ export class UserService {
     await this.entityManager.save(user);
 
     await this.supabaseClient
-      .from('messages')
+      .from("messages")
       .delete()
-      .eq('metadata', { userId: user.id });
+      .eq("metadata", { userId: user.id });
   }
 
   public async setUserToken(user: User, token: string) {
