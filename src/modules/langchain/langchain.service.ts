@@ -1,22 +1,23 @@
-import { Injectable } from '@nestjs/common';
-import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
-import { Pool } from 'pg';
-import { RunnableWithMessageHistory } from '@langchain/core/runnables';
-import { BaseMessage } from '@langchain/core/messages';
-import { filterMessages } from './chain/utils';
+import { Injectable } from "@nestjs/common";
+import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
+import { Pool } from "pg";
 import {
+  RunnableSequence,
+  RunnableWithMessageHistory,
+} from "@langchain/core/runnables";
+import { filterMessages } from "./chain/utils";
+import {
+  BaseChatPromptTemplate,
   ChatPromptTemplate,
   MessagesPlaceholder,
-  BaseChatPromptTemplate,
-} from '@langchain/core/prompts';
-import { PGChatMessageHistory } from './pg';
-import { ASSISTANT_INSTRUCTIONS } from '../openai/openai.constant';
-import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
-import { RunnableSequence } from '@langchain/core/runnables';
-import { getRephraseChain } from './chain/rephrase.chain';
-import { ChatHistorySplitter } from './chat-history-splitter';
-import { BaseListChatMessageHistory } from '@langchain/core/chat_history';
-import { SupabaseClient } from '@supabase/supabase-js';
+} from "@langchain/core/prompts";
+import { PGChatMessageHistory } from "./pg-chat-message-history";
+import { ASSISTANT_INSTRUCTIONS } from "../openai/openai.constant";
+import { SupabaseVectorStore } from "@langchain/community/vectorstores/supabase";
+import { getRephraseChain } from "./chain/rephrase.chain";
+import { ChatHistorySplitter } from "./chat-history-splitter";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { CachedChatMessageHistory } from "./cached-chat-message-history";
 
 @Injectable()
 export class LangchainService {
@@ -27,7 +28,7 @@ export class LangchainService {
 
   private getLlmModel(token: string): ChatOpenAI {
     return new ChatOpenAI({
-      modelName: 'gpt-3.5-turbo',
+      modelName: "gpt-3.5-turbo",
       openAIApiKey: token,
       streaming: true,
       maxTokens: 3000,
@@ -41,12 +42,12 @@ export class LangchainService {
 
   private getMessagesHistoryPromptTemplate(): BaseChatPromptTemplate<
     { history: string; input: string },
-    'history'
+    "history"
   > {
     return ChatPromptTemplate.fromMessages([
-      ['system', ASSISTANT_INSTRUCTIONS],
-      new MessagesPlaceholder('history'),
-      ['human', '{input}'],
+      ["system", ASSISTANT_INSTRUCTIONS],
+      new MessagesPlaceholder("history"),
+      ["human", "{input}"],
     ]);
   }
 
@@ -54,7 +55,7 @@ export class LangchainService {
     return PGChatMessageHistory.create({
       pool: new Pool({ connectionString: process.env.DATABASE_URL }),
       messagesLimit: 1000,
-      tableName: 'pg_chat_message_history15',
+      tableName: "pg_chat_message_history15",
       sessionId: userId.toString(),
     });
   }
@@ -128,29 +129,15 @@ export class LangchainService {
     const runnableWithHistory = new RunnableWithMessageHistory({
       runnable: runnableSequence,
       getMessageHistory: () =>
-        new (class extends BaseListChatMessageHistory {
-          lc_namespace: string[] = ['langchain', 'stores', 'message', 'pg'];
-
-          addMessage(message: BaseMessage): Promise<void> {
-            return messageHistory.addMessage(message);
-          }
-
-          async getMessages(): Promise<BaseMessage[]> {
-            return allMessages;
-          }
-
-          clearMessages(): Promise<void> {
-            return messageHistory.clearMessages();
-          }
-        })(),
-      inputMessagesKey: 'input',
-      historyMessagesKey: 'history',
+        new CachedChatMessageHistory(messageHistory, allMessages),
+      inputMessagesKey: "input",
+      historyMessagesKey: "history",
     });
 
     const [stream] = await Promise.all([
       runnableWithHistory.stream(
         { input: `[sent-date:${new Date().toISOString()}]\n${message}` },
-        { configurable: { sessionId: '1' } },
+        { configurable: { sessionId: "1" } },
       ),
       documents.length && store.addDocuments([documents[documents.length - 1]]),
     ]);

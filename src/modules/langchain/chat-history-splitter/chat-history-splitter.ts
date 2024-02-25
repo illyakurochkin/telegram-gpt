@@ -1,12 +1,14 @@
-import { DocumentLoader } from 'langchain/document_loaders/base';
-import { BaseMessage } from '@langchain/core/messages';
-import { Document } from '@langchain/core/documents';
+import { BaseMessage } from "@langchain/core/messages";
+import { Document } from "@langchain/core/documents";
+import { BaseDocumentLoader } from "langchain/document_loaders/base";
 
-export class ChatHistorySplitter implements DocumentLoader {
+export class ChatHistorySplitter extends BaseDocumentLoader {
   constructor(
     private readonly userId: number,
     private readonly messages: BaseMessage[],
-  ) {}
+  ) {
+    super();
+  }
 
   async load(): Promise<Document[]> {
     // this.chatHistory.
@@ -35,16 +37,12 @@ export class ChatHistorySplitter implements DocumentLoader {
       return new Document({
         pageContent: messagesGroups
           .map((message) => message.content)
-          .join('\n\n'),
+          .join("\n\n"),
         metadata: {
           userId: this.userId,
           messagesIds: messagesGroups.map((message) => message.lc_kwargs.id),
         },
       });
     });
-  }
-
-  async loadAndSplit(): Promise<Document[]> {
-    throw new Error('Method not implemented.');
   }
 }

@@ -1,4 +1,4 @@
-import { Json } from './json.types';
+import type { Json } from "./json.types";
 
 export const JSON_REGEX =
   /[-+]?\d*\.?\d+([eE][-+]?\d+)?|"(?:\\.|[^"\\])*"|\{(?:\s*"(?:\\.|[^"\\])*"\s*:\s*(?:\{[^{}]*\}|\[[^\[\]]*\]|[-+]?\d*\.?\d+([eE][-+]?\d+)?|"(?:\\.|[^"\\])*")\s*,?\s*)*\}|\[[^\[\]]*\]/gm;

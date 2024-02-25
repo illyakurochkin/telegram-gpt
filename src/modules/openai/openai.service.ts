@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { OpenAIClient } from './openai-client';
-import * as path from 'path';
-import OpenAI from 'openai';
-import * as fs from 'fs';
+import { Injectable, Logger } from "@nestjs/common";
+import { OpenAIClient } from "./openai-client";
+import * as path from "path";
+import OpenAI from "openai";
+import * as fs from "fs";
 
 @Injectable()
 export class OpenAIService {
@@ -13,8 +13,8 @@ export class OpenAIService {
     const speechFile = path.resolve(`./speech-${new Date().getTime()}.mp3`);
     const openai = new OpenAI({ apiKey: token });
     const mp3 = await openai.audio.speech.create({
-      model: 'tts-1',
-      voice: 'alloy',
+      model: "tts-1",
+      voice: "alloy",
       input: text,
     });
     const buffer = Buffer.from(await mp3.arrayBuffer());
@@ -26,7 +26,7 @@ export class OpenAIService {
     const openai = new OpenAI({ apiKey: token });
     const result = await openai.audio.transcriptions.create({
       file: speech,
-      model: 'whisper-1',
+      model: "whisper-1",
     });
 
     return result.text;
@@ -114,7 +114,7 @@ export class OpenAIService {
    */
   async validateToken(token: string): Promise<boolean> {
     const isValid = await this.openAIClient.validateToken({ token });
-    this.logger.log(`token ${token} is ${isValid ? 'valid' : 'invalid'}`);
+    this.logger.log(`token ${token} is ${isValid ? "valid" : "invalid"}`);
     return isValid;
   }
 }

@@ -1,20 +1,20 @@
-import axios, { AxiosInstance } from 'axios';
-import { RunStatus } from './openai.types';
-import { ASSISTANT_INSTRUCTIONS } from './openai.constant';
+import axios, { AxiosInstance } from "axios";
+import { RunStatus } from "./openai.types";
+import { ASSISTANT_INSTRUCTIONS } from "./openai.constant";
 
 export class OpenAIClient {
   private readonly client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
-      baseURL: 'https://api.openai.com/v1',
-      headers: { 'OpenAI-Beta': 'assistants=v1' },
+      baseURL: "https://api.openai.com/v1",
+      headers: { "OpenAI-Beta": "assistants=v1" },
     });
   }
 
   async createThread({ token }: { token: string }): Promise<string> {
     const thread = await this.client.post(
-      '/threads',
+      "/threads",
       {},
       { headers: { Authorization: `Bearer ${token}` } },
     );
@@ -40,7 +40,7 @@ export class OpenAIClient {
   }): Promise<string> {
     const message = await this.client.post(
       `/threads/${threadId}/messages`,
-      { content, role: 'user' },
+      { content, role: "user" },
       { headers: { Authorization: `Bearer ${token}` } },
     );
     return message.data.id;
@@ -115,22 +115,22 @@ export class OpenAIClient {
       );
 
       if (!response.data || response.status !== 200)
-        return { status: 'failed' };
+        return { status: "failed" };
 
-      if (response.data.status === 'completed') return { status: 'completed' };
+      if (response.data.status === "completed") return { status: "completed" };
 
-      if (['queued', 'in_progress'].includes(response.data.status))
-        return { status: 'in_progress' };
+      if (["queued", "in_progress"].includes(response.data.status))
+        return { status: "in_progress" };
 
-      return { status: 'failed' };
+      return { status: "failed" };
     } catch {
-      return { status: 'failed' };
+      return { status: "failed" };
     }
   }
 
   async validateToken({ token }: { token: string }): Promise<boolean> {
     try {
-      const client = await this.client.get('/models', {
+      const client = await this.client.get("/models", {
         headers: { Authorization: `Bearer ${token}` },
       });
 

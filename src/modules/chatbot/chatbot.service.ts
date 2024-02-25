@@ -1,16 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { OpenAIService } from '../openai';
-import { UserService } from '../user';
-import { TelegramService } from '../telegram';
-import { StartHandler } from './handlers/start.handler';
-import { TokenHandler } from './handlers/token.handler';
-import { ResetHandler } from './handlers/reset.handler';
-import { AdminHandler } from './handlers/admin.handler';
-import { NewMessageHandler } from './handlers/new-message.handler';
-import { TextToSpeechHandler } from './handlers/text-to-speech.handler';
-import { SpeechToTextHandler } from './handlers/spech-to-text.handler';
-import { Message } from '@telegraf/types';
-import TextMessage = Message.TextMessage;
+import { Injectable, Logger } from "@nestjs/common";
+import { OpenAIService } from "../openai";
+import { UserService } from "../user";
+import { TelegramService } from "../telegram";
+import { StartHandler } from "./handlers/start.handler";
+import { TokenHandler } from "./handlers/token.handler";
+import { ResetHandler } from "./handlers/reset.handler";
+import { AdminHandler } from "./handlers/admin.handler";
+import { NewMessageHandler } from "./handlers/new-message.handler";
+import { TextToSpeechHandler } from "./handlers/text-to-speech.handler";
+import { SpeechToTextHandler } from "./handlers/spech-to-text.handler";
 
 @Injectable()
 export class ChatBotService {
@@ -31,35 +29,34 @@ export class ChatBotService {
     private readonly speechToTextHandler: SpeechToTextHandler,
   ) {
     telegramService.registerCommand(
-      'start',
-      startHandler.handle.bind(startHandler),
+      "start",
+      startHandler.handleMessage.bind(startHandler),
     );
     telegramService.registerCommand(
-      'token',
-      tokenHandler.handle.bind(tokenHandler),
+      "token",
+      tokenHandler.handleMessage.bind(tokenHandler),
     );
     telegramService.registerCommand(
-      'reset',
-      resetHandler.handle.bind(resetHandler),
+      "reset",
+      resetHandler.handleMessage.bind(resetHandler),
     );
     telegramService.registerCommand(
-      'admin',
-      adminHandler.handle.bind(adminHandler),
+      "admin",
+      adminHandler.handleMessage.bind(adminHandler),
     );
     telegramService.registerCommand(
-      'v',
-      textToSpeechHandler.handle.bind(textToSpeechHandler),
+      "v",
+      textToSpeechHandler.handleMessage.bind(textToSpeechHandler),
+    );
+    telegramService.registerCommand(
+      "voice",
+      textToSpeechHandler.handleMessage.bind(textToSpeechHandler),
     );
     telegramService.registerMessageHandler((ctx) => {
-      if ((ctx.message as TextMessage).text) {
-        return newMessageHandler.handle(ctx);
-      }
-
-      if ((ctx.message as Message.VoiceMessage).voice) {
-        return speechToTextHandler.handle(ctx);
-      }
+      if ("text" in ctx.message) return newMessageHandler.handleMessage(ctx);
+      if ("voice" in ctx.message) return speechToTextHandler.handleMessage(ctx);
     });
 
-    this.logger.log('ChatBotService initialized');
+    this.logger.log("ChatBotService initialized");
   }
 }

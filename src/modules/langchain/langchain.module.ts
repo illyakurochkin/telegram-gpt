@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { LangchainService } from './langchain.service';
+import { Module } from "@nestjs/common";
+import { LangchainService } from "./langchain.service";
 
 @Module({
   providers: [LangchainService],

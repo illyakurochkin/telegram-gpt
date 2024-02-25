@@ -1,13 +1,13 @@
-import { Pool } from 'pg';
-import { BaseListChatMessageHistory } from '@langchain/core/chat_history';
+import { Pool } from "pg";
+import { BaseListChatMessageHistory } from "@langchain/core/chat_history";
 import {
   BaseMessage,
   mapChatMessagesToStoredMessages,
   mapStoredMessagesToChatMessages,
-} from '@langchain/core/messages';
+} from "@langchain/core/messages";
 
 export class PGChatMessageHistory extends BaseListChatMessageHistory {
-  lc_namespace: string[] = ['langchain', 'stores', 'message', 'pg'];
+  lc_namespace: string[] = ["langchain", "stores", "message", "pg"];
 
   protected constructor(
     private readonly pool: Pool,
@@ -45,7 +45,7 @@ export class PGChatMessageHistory extends BaseListChatMessageHistory {
       `SELECT * FROM "${
         this.tableName
       }" WHERE session_id = $1 ORDER BY created_at DESC ${
-        this.messagesLimit ? `LIMIT ${this.messagesLimit}` : ''
+        this.messagesLimit ? `LIMIT ${this.messagesLimit}` : ""
       }`,
       [this.sessionId],
     );
@@ -89,9 +89,9 @@ export class PGChatMessageHistory extends BaseListChatMessageHistory {
     if (!ids.length) return [];
     const result = await this.pool.query(
       `SELECT * FROM "${this.tableName}" WHERE id IN (${ids.join(
-        ',',
+        ",",
       )}) ORDER BY created_at DESC ${
-        this.messagesLimit ? `LIMIT ${this.messagesLimit}` : ''
+        this.messagesLimit ? `LIMIT ${this.messagesLimit}` : ""
       }`,
       [],
     );

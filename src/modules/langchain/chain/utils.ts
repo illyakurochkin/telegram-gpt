@@ -1,11 +1,11 @@
-import { ChatOpenAI, OpenAI } from '@langchain/openai';
-import { BaseMessage } from '@langchain/core/messages';
+import { ChatOpenAI, OpenAI } from "@langchain/openai";
+import { BaseMessage } from "@langchain/core/messages";
 
 export const filterMessages = async (
   model: OpenAI | ChatOpenAI,
   messages: BaseMessage[],
   maxTokens: number,
-) => {
+): Promise<BaseMessage[]> => {
   const messagesWithNumTokens = await Promise.all(
     messages.map(async (message) => ({
       message,

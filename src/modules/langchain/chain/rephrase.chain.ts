@@ -58,25 +58,28 @@ human: {input}
 OUTPUT:
   `);
 
-  let initialInput = '';
+  let initialInput = "";
 
-  return RunnableSequence.from([
-    {
-      input: ({ input }) => {
-        initialInput = input;
-        return input;
-      },
-      messages: async () => {
-        const latestMessages = await filterMessages(model, messages, 500);
+  return RunnableSequence.from(
+    [
+      {
+        input: ({ input }) => {
+          initialInput = input;
+          return input;
+        },
+        messages: async () => {
+          const latestMessages = await filterMessages(model, messages, 500);
 
-        return latestMessages
-          .map((message) => `${message._getType()}: ${message.content}`)
-          .join('\n\n');
+          return latestMessages
+            .map((message) => `${message._getType()}: ${message.content}`)
+            .join("\n\n");
+        },
       },
-    },
-    messageHistoryPrompt,
-    model,
-    new JsonOutputParser(z.array(z.string())),
-    (input) => input.flat()[0] ?? initialInput,
-  ]);
+      messageHistoryPrompt,
+      model,
+      new JsonOutputParser(z.array(z.string())),
+      (input) => input.flat()[0] ?? initialInput,
+    ],
+    "rephrase",
+  );
 };

@@ -1,1 +1,1 @@
-export { ChatHistorySplitter } from './chat-history-splitter';
+export { ChatHistorySplitter } from "./chat-history-splitter";
