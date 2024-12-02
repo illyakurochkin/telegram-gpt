@@ -29,10 +29,12 @@ export class UserService {
 
     await this.entityManager.save(user);
 
-    await this.supabaseClient
-      .from("messages")
-      .delete()
-      .eq("metadata", { userId: user.id });
+    await this.entityManager.delete("messages-vectors", { userId: user.id });
+
+      // await this.supabaseClient
+      //   .from("messages")
+      //   .delete()
+      //   .eq("metadata", { userId: user.id });
   }
 
   public async setUserToken(user: User, token: string) {

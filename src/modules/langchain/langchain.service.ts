@@ -18,6 +18,7 @@ import { getRephraseChain } from "./chain/rephrase.chain";
 import { ChatHistorySplitter } from "./chat-history-splitter";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { CachedChatMessageHistory } from "./cached-chat-message-history";
+import { MemoryVectorStore } from 'langchain/vectorstores/memory';
 
 @Injectable()
 export class LangchainService {
@@ -78,17 +79,17 @@ export class LangchainService {
 
     const embeddingsModel = this.getEmbeddingsModel(token);
 
-    // const store = await MemoryVectorStore.fromDocuments(
-    //   documents,
-    //   embeddingsModel,
-    // );
+    const store = await MemoryVectorStore.fromDocuments(
+      documents,
+      embeddingsModel,
+    );
 
-    const store = await SupabaseVectorStore.fromExistingIndex(embeddingsModel, {
-      client: new SupabaseClient(
-        process.env.SUPABASE_PROJECT_URL,
-        process.env.SUPABASE_API_KEY,
-      ),
-    });
+    // const store = await SupabaseVectorStore.fromExistingIndex(embeddingsModel, {
+    //   client: new SupabaseClient(
+    //     process.env.SUPABASE_PROJECT_URL,
+    //     process.env.SUPABASE_API_KEY,
+    //   ),
+    // });
 
     const runnableSequence = RunnableSequence.from([
       {
@@ -104,7 +105,7 @@ export class LangchainService {
           const similarDocuments = await store.similaritySearch(
             rephrased,
             undefined,
-            { userId },
+            (a) => a.metadata.userId === userId,
           );
 
           const similarMessagesIds = similarDocuments
